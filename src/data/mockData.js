@@ -110,11 +110,14 @@ export const INITIAL_CLIENTS = [
     bouquetId: 'moyen',
     bouquetName: 'Moyen Bouquet',
     status: 'Actif',
-    subscriptionExpires: '2026-08-30',
+    subscriptionStartDate: '2026-08-01',
+    subscriptionExpires: '2026-08-31',
     paymentHistory: [
       {
         id: 'pay-101',
         date: '2026-08-01',
+        startDate: '2026-08-01',
+        endDate: '2026-08-31',
         amount: 25000,
         provider: 'VODACOM M-PESA',
         serialNumber: 'MP-8924019238',
@@ -135,11 +138,14 @@ export const INITIAL_CLIENTS = [
     bouquetId: 'grand',
     bouquetName: 'Grand Bouquet',
     status: 'Actif',
-    subscriptionExpires: '2026-09-05',
+    subscriptionStartDate: '2026-08-02',
+    subscriptionExpires: '2026-09-01',
     paymentHistory: [
       {
         id: 'pay-102',
         date: '2026-08-02',
+        startDate: '2026-08-02',
+        endDate: '2026-09-01',
         amount: 40000,
         provider: 'AIRTEL MONEY',
         serialNumber: 'AM-771029481',
@@ -160,11 +166,14 @@ export const INITIAL_CLIENTS = [
     bouquetId: 'petit',
     bouquetName: 'Petit Bouquet',
     status: 'En attente',
-    subscriptionExpires: '2026-08-03',
+    subscriptionStartDate: null,
+    subscriptionExpires: null,
     paymentHistory: [
       {
         id: 'pay-103',
         date: '2026-08-03',
+        startDate: null,
+        endDate: null,
         amount: 15000,
         provider: 'AIRTEL MONEY',
         serialNumber: 'AM-998822019',

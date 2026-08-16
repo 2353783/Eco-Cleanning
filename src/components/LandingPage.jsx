@@ -135,16 +135,16 @@ export default function LandingPage({ onSelectRole, onOpenAuth, passages }) {
               </div>
             </div>
 
-            <div style={{ borderRadius: '16px', overflow: 'hidden', height: '220px', position: 'relative', marginBottom: '18px' }}>
+            <div className="hero-team-img-wrapper" style={{ height: '230px', position: 'relative', marginBottom: '18px', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
               <img 
-                src="https://images.unsplash.com/photo-1611284446314-60a55ac7deab?auto=format&fit=crop&w=800&q=80" 
+                src="/assi.jpg" 
                 alt="Équipe d'assainissement RDC" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
               <div style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.85) 100%)',
+                background: 'linear-gradient(180deg, transparent 35%, rgba(15, 23, 42, 0.88) 100%)',
                 display: 'flex',
                 alignItems: 'flex-end',
                 padding: '16px',
@@ -152,7 +152,7 @@ export default function LandingPage({ onSelectRole, onOpenAuth, passages }) {
                 fontSize: '0.88rem',
                 fontWeight: 600
               }}>
-                "Grâce à Eco Clean RDC, nos quartiers restent propres et débarrassés des détritus ménagers."
+                "Équipe d'Assainissement Eco Clean RDC — Nos agents engagés sur le terrain."
               </div>
             </div>
 

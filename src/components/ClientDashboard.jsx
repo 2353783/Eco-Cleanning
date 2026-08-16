@@ -158,16 +158,27 @@ export default function ClientDashboard({ client, onUpdateClient, passages, onAd
           </div>
         </div>
 
-        {/* Current Plan status */}
-        <div style={{ textAlign: 'right' }}>
+        {/* Current Plan & Dates status */}
+        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
           <div style={{ fontSize: '0.78rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>Abonnement Actuel</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2E7D32' }}>{client.bouquetName || 'Aucun bouquet'}</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#2E7D32' }}>{client.bouquetName || 'Aucun bouquet'}</div>
+          
+          {client.status === 'Actif' ? (
+            <div style={{ fontSize: '0.82rem', backgroundColor: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0', padding: '4px 10px', borderRadius: '8px', fontWeight: 600 }}>
+              📅 <strong>Début:</strong> {client.subscriptionStartDate || '01/08/2026'} • ⌛ <strong>Fin:</strong> {client.subscriptionExpires || '31/08/2026'}
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.78rem', backgroundColor: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '4px 10px', borderRadius: '8px', fontWeight: 600 }}>
+              ⏳ En attente de validation & d'approbation Admin
+            </div>
+          )}
+
           <button 
             className="btn btn-primary" 
-            style={{ padding: '6px 14px', fontSize: '0.8rem', marginTop: '8px' }}
+            style={{ padding: '6px 14px', fontSize: '0.8rem', marginTop: '4px' }}
             onClick={() => setActiveTab('payment')}
           >
-            Renouveler / Payer par Mobile Money
+            Payer / Soumettre Preuve par Mobile Money
           </button>
         </div>
       </div>
@@ -215,6 +226,7 @@ export default function ClientDashboard({ client, onUpdateClient, passages, onAd
         </button>
       </div>
 
+      <div key={activeTab} className="tab-transition-enter">
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
@@ -402,6 +414,85 @@ export default function ClientDashboard({ client, onUpdateClient, passages, onAd
               </button>
 
             </form>
+
+          </div>
+
+          {/* Current Subscription Dates & Status Summary Card */}
+          <div className="eco-card" style={{ padding: '24px', borderRadius: '20px', marginTop: '24px', backgroundColor: '#FFFFFF' }}>
+            <h4 style={{ fontSize: '1.1rem', color: '#1B5E20', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              📅 Statut & Dates Officiennes de votre Abonnement
+            </h4>
+
+            {client.status === 'Actif' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', backgroundColor: '#F0FDF4', padding: '18px', borderRadius: '14px', border: '1px solid #BBF7D0' }}>
+                <div>
+                  <div style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 700, textTransform: 'uppercase' }}>Formule Souscrite</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#166534' }}>{client.bouquetName || 'Moyen Bouquet'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 700, textTransform: 'uppercase' }}>Date de Début</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#166534' }}>{client.subscriptionStartDate || '01/08/2026'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 700, textTransform: 'uppercase' }}>Date de Fin (Échéance)</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#166534' }}>{client.subscriptionExpires || '31/08/2026'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.78rem', color: '#15803D', fontWeight: 700, textTransform: 'uppercase' }}>Statut Admin</div>
+                  <span className="badge badge-active">✓ Validé & Actif</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ backgroundColor: '#FEF3C7', padding: '18px', borderRadius: '14px', border: '1px solid #FDE68A', color: '#B45309' }}>
+                <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '4px' }}>⏳ Paiement en cours de vérification par l'Admin</div>
+                <div style={{ fontSize: '0.88rem' }}>
+                  Votre preuve de paiement a bien été soumise. Dès approbation par l'Administrateur, vos dates de début et de fin d'abonnement (30 jours) seront officiellement activées ci-dessus.
+                </div>
+              </div>
+            )}
+
+            {/* Payment History Table */}
+            <div style={{ marginTop: '24px' }}>
+              <h5 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>
+                📜 Historique de vos Paiements Soumis
+              </h5>
+              {(client.paymentHistory && client.paymentHistory.length > 0) ? (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#F8FAF8', borderBottom: '1px solid #E2E8F0', color: '#64748B', textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Opérateur</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>N° Série</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Montant</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Période (Début ➔ Fin)</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Statut Admin</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {client.paymentHistory.map(p => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '10px', fontWeight: 600 }}>{p.date}</td>
+                          <td style={{ padding: '10px' }}>{p.provider}</td>
+                          <td style={{ padding: '10px' }}><code style={{ backgroundColor: '#E2E8F0', padding: '2px 6px', borderRadius: '4px' }}>{p.serialNumber}</code></td>
+                          <td style={{ padding: '10px', fontWeight: 700, color: '#2E7D32' }}>{p.amount?.toLocaleString()} FC</td>
+                          <td style={{ padding: '10px', fontWeight: 600, color: '#475569' }}>
+                            {p.startDate ? `${p.startDate} ➔ ${p.endDate}` : 'En attente de validation'}
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            <span className={`badge ${p.status === 'Validé' ? 'badge-active' : 'badge-pending'}`}>
+                              {p.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.85rem', color: '#64748B', fontStyle: 'italic' }}>Aucun historique de paiement pour l'instant.</div>
+              )}
+            </div>
 
           </div>
         </div>
@@ -710,6 +801,7 @@ export default function ClientDashboard({ client, onUpdateClient, passages, onAd
           </div>
         </div>
       )}
+      </div>
 
     </div>
   );

@@ -112,41 +112,48 @@ export default function AdminDashboard({
         ))}
       </div>
 
+      <div key={activeTab} className="tab-transition-enter">
       {/* TAB: PAYMENT VERIFICATION */}
       {activeTab === 'payments' && (
         <div>
-          <h3 style={{ fontSize: '1.3rem', color: '#1B5E20', marginBottom: '16px' }}>💳 Vérification des Preuves de Paiement Mobile Money</h3>
+          <h3 style={{ fontSize: '1.3rem', color: '#1B5E20', marginBottom: '16px' }}>💳 Vérification & Approbation des Paiements Mobile Money</h3>
+          <p style={{ fontSize: '0.88rem', color: '#64748B', marginBottom: '20px' }}>
+            Vérifiez le numéro de série et la preuve de paiement soumise. Lorsque vous cliquez sur "Approuver", l'abonnement du client s'active automatiquement pour une période officielle de 30 jours.
+          </p>
           {pendingPayments.length === 0 ? (
-            <div className="eco-card" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>✅ Aucun paiement en attente.</div>
+            <div className="eco-card" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>✅ Aucun paiement en attente d'approbation.</div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
               {pendingPayments.map(p => (
-                <div key={p.id} className="eco-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                <div key={p.id} className="eco-card" style={{ padding: '24px', borderRadius: '16px', borderLeft: '5px solid #F59E0B' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                     <div>
                       <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A' }}>{p.clientName}</div>
                       <div style={{ fontSize: '0.82rem', color: '#64748B' }}>{p.ville || 'Kinshasa'} — {p.commune || ''} • {p.quartier}, {p.avenue}</div>
                     </div>
-                    <span className="badge badge-pending">En Attente</span>
+                    <span className="badge badge-pending">Validation Requise</span>
                   </div>
 
-                  <div style={{ backgroundColor: '#F8FAF8', padding: '12px', borderRadius: '10px', fontSize: '0.88rem', marginBottom: '16px' }}>
-                    <div>Opérateur: <strong>{p.provider}</strong></div>
-                    <div>Montant: <strong style={{ color: '#2E7D32' }}>{p.amount?.toLocaleString()} FC</strong></div>
-                    <div>N° de Série: <code style={{ backgroundColor: '#E2E8F0', padding: '2px 6px', borderRadius: '4px' }}>{p.serialNumber}</code></div>
-                    <div>Date: {p.date}</div>
+                  <div style={{ backgroundColor: '#F8FAF8', padding: '14px', borderRadius: '10px', fontSize: '0.88rem', marginBottom: '16px' }}>
+                    <div>Opérateur Mobile Money: <strong>{p.provider}</strong></div>
+                    <div>Montant Transféré: <strong style={{ color: '#2E7D32' }}>{p.amount?.toLocaleString()} FC</strong></div>
+                    <div>N° de Série Transaction: <code style={{ backgroundColor: '#E2E8F0', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>{p.serialNumber}</code></div>
+                    <div>Date de Soumission: <strong>{p.date}</strong></div>
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #CBD5E1', color: '#1B5E20', fontSize: '0.82rem', fontWeight: 600 }}>
+                      📅 Période si approuvé aujourd'hui : du <strong>{new Date().toISOString().split('T')[0]}</strong> au <strong>{new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]}</strong>
+                    </div>
                   </div>
 
                   {p.proofUrl && (
                     <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', marginBottom: '4px' }}>Capture de preuve :</div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', marginBottom: '4px' }}>Capture d'écran de preuve :</div>
                       <img src={p.proofUrl} alt="Proof" style={{ height: '120px', borderRadius: '8px', border: '1px solid #CBD5E1', cursor: 'pointer', objectFit: 'cover' }} onClick={() => setSelectedProofModal(p.proofUrl)} />
-                      <div style={{ fontSize: '0.72rem', color: '#2E7D32', marginTop: '2px', cursor: 'pointer' }} onClick={() => setSelectedProofModal(p.proofUrl)}>🔍 Agrandir</div>
+                      <div style={{ fontSize: '0.72rem', color: '#2E7D32', marginTop: '2px', cursor: 'pointer' }} onClick={() => setSelectedProofModal(p.proofUrl)}>🔍 Agrandir la Preuve</div>
                     </div>
                   )}
 
-                  <button className="btn btn-primary" style={{ width: '100%', padding: '10px', fontSize: '0.88rem' }} onClick={() => { onValidatePayment(p.clientId, p.id); alert('Abonnement activé avec succès !'); }}>
-                    <CheckCircle2 size={16} /> Valider et Activer l'Abonnement
+                  <button className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '0.92rem', backgroundColor: '#2E7D32' }} onClick={() => { onValidatePayment(p.clientId, p.id); alert(`Paiement de ${p.clientName} approuvé ! Abonnement actif pour 30 jours.`); }}>
+                    <CheckCircle2 size={18} /> Approuver le Paiement & Activer l'Abonnement (30 Jours)
                   </button>
                 </div>
               ))}
@@ -198,7 +205,9 @@ export default function AdminDashboard({
                   })}
                 </div>
               </div>
-              <button className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '0.92rem', marginTop: '10px' }}>Créer le Compte Agent</button>
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px', padding: '12px' }}>
+                Enregistrer le Compte Agent
+              </button>
             </form>
           </div>
 
@@ -207,21 +216,20 @@ export default function AdminDashboard({
             <h3 style={{ fontSize: '1.2rem', color: '#1B5E20', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Shield size={22} color="#2E7D32" /> Créer un Compte Administrateur
             </h3>
-            <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '18px' }}>Ajouter un gestionnaire de supervision pour la plateforme Eco Clean RDC.</p>
-            {adminSuccess && <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#DCFCE7', color: '#15803D', fontWeight: 700, marginBottom: '16px', fontSize: '0.85rem' }}>✅ Administrateur ajouté avec succès !</div>}
+            <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '18px' }}>Ajouter un administrateur secondaire pour gérer la ville.</p>
+            {adminSuccess && <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#DCFCE7', color: '#15803D', fontWeight: 700, marginBottom: '16px', fontSize: '0.85rem' }}>✅ Compte Admin créé avec succès !</div>}
             <form onSubmit={handleCreateAdmin}>
               <div className="form-group">
-                <label className="form-label">Nom du Nouvel Administrateur</label>
-                <input type="text" className="form-input" placeholder="Ex: TSHIBANGU Nicole" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} required />
+                <label className="form-label">Nom Complet de l'Administrateur</label>
+                <input type="text" className="form-input" placeholder="Ex: KANKU Beatrice" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Numéro de Téléphone Admin</label>
-                <input type="tel" className="form-input" placeholder="+243 89 00 00 000" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} required />
+                <label className="form-label">Numéro de Téléphone</label>
+                <input type="tel" className="form-input" placeholder="+243 90 00 00 000" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} required />
               </div>
-              <div style={{ padding: '14px', backgroundColor: '#F8FAF8', borderRadius: '10px', fontSize: '0.85rem', color: '#475569', marginTop: '12px', border: '1px solid #E2E8F0' }}>
-                <strong>Note :</strong> Cet administrateur aura accès à la gestion de la totalité de la plateforme Eco Clean RDC (paiements, agents, réclamations, clients).
-              </div>
-              <button className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '0.92rem', marginTop: '20px' }}>Créer le Compte Administrateur</button>
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px', padding: '12px' }}>
+                Enregistrer l'Administrateur
+              </button>
             </form>
           </div>
         </div>
@@ -310,7 +318,8 @@ export default function AdminDashboard({
                   <th style={{ padding: '14px', textAlign: 'left' }}>Localisation RDC</th>
                   <th style={{ padding: '14px', textAlign: 'left' }}>Bouquet</th>
                   <th style={{ padding: '14px', textAlign: 'left' }}>Statut</th>
-                  <th style={{ padding: '14px', textAlign: 'left' }}>Expiration</th>
+                  <th style={{ padding: '14px', textAlign: 'left' }}>Date Début</th>
+                  <th style={{ padding: '14px', textAlign: 'left' }}>Date Fin / Échéance</th>
                 </tr>
               </thead>
               <tbody>
@@ -327,7 +336,8 @@ export default function AdminDashboard({
                     <td style={{ padding: '14px' }}>
                       <span className={`badge ${c.status === 'Actif' ? 'badge-active' : 'badge-pending'}`}>{c.status}</span>
                     </td>
-                    <td style={{ padding: '14px', color: '#64748B' }}>{c.subscriptionExpires || '—'}</td>
+                    <td style={{ padding: '14px', color: '#15803D', fontWeight: 600 }}>{c.subscriptionStartDate || 'En attente'}</td>
+                    <td style={{ padding: '14px', color: '#B45309', fontWeight: 600 }}>{c.subscriptionExpires || 'En attente'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -335,6 +345,7 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
+      </div>
 
       {/* Proof Modal */}
       {selectedProofModal && (

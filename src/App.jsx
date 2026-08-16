@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import ClientDashboard from './components/ClientDashboard';
@@ -12,6 +12,8 @@ import {
   INITIAL_PASSAGES, 
   INITIAL_COMPLAINTS 
 } from './data/mockData';
+
+import { broadcastStateUpdate, subscribeToRealtimeSync } from './firebase';
 
 export default function App() {
   const [currentRole, setCurrentRole] = useState('public'); // public, client, agent, admin
@@ -33,6 +35,18 @@ export default function App() {
   // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+
+  // Real-time synchronization across Client, Agent, Admin profiles
+  useEffect(() => {
+    const unsubscribe = subscribeToRealtimeSync(({ sliceKey, data }) => {
+      if (!data) return;
+      if (sliceKey === 'clients') setClients(data);
+      if (sliceKey === 'agents') setAgents(data);
+      if (sliceKey === 'passages') setPassages(data);
+      if (sliceKey === 'complaints') setComplaints(data);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeAgent = agents.find(a => a.id === activeAgentId) || agents[0];
@@ -65,7 +79,10 @@ export default function App() {
         status: 'En attente',
         paymentHistory: []
       };
-      setClients([newClient, ...clients]);
+      const updatedClients = [newClient, ...clients];
+      setClients(updatedClients);
+      broadcastStateUpdate('clients', updatedClients);
+
       setActiveClientId(newClient.id);
       setCurrentUser(newClient);
     } else {
@@ -78,56 +95,89 @@ export default function App() {
   };
 
   const handleAddAgent = (newAgent) => {
-    setAgents([newAgent, ...agents]);
+    const updatedAgents = [newAgent, ...agents];
+    setAgents(updatedAgents);
+    broadcastStateUpdate('agents', updatedAgents);
   };
 
   const handleAddAdmin = (newAdmin) => {
     setAdmins([newAdmin, ...admins]);
   };
 
-  // Handlers for state mutations across roles
+  // Handlers for state mutations across roles with real-time sync
   const handleUpdateClient = (updatedData) => {
-    setClients(clients.map(c => c.id === activeClientId ? { ...c, ...updatedData } : c));
+    const updatedClients = clients.map(c => c.id === activeClientId ? { ...c, ...updatedData } : c);
+    setClients(updatedClients);
+    broadcastStateUpdate('clients', updatedClients);
   };
 
   const handleAddPayment = (paymentObj) => {
+    const todayStr = new Date().toISOString().split('T')[0];
     const newPayment = {
       id: `pay-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: todayStr,
+      startDate: null,
+      endDate: null,
       ...paymentObj,
       status: 'En attente'
     };
 
-    setClients(clients.map(c => {
+    const updatedClients = clients.map(c => {
       if (c.id === activeClientId) {
         return {
           ...c,
+          status: 'En attente de validation Admin',
           bouquetId: paymentObj.bouquetId,
           bouquetName: paymentObj.bouquetName,
           paymentHistory: [newPayment, ...(c.paymentHistory || [])]
         };
       }
       return c;
-    }));
+    });
+
+    setClients(updatedClients);
+    broadcastStateUpdate('clients', updatedClients);
   };
 
   const handleValidatePayment = (clientId, paymentId) => {
-    setClients(clients.map(c => {
+    const today = new Date();
+    const startDateStr = today.toISOString().split('T')[0];
+    
+    const endDateObj = new Date(today);
+    endDateObj.setDate(endDateObj.getDate() + 30);
+    const endDateStr = endDateObj.toISOString().split('T')[0];
+
+    const updatedClients = clients.map(c => {
       if (c.id === clientId) {
-        const updatedHistory = (c.paymentHistory || []).map(p => p.id === paymentId ? { ...p, status: 'Validé' } : p);
+        const updatedHistory = (c.paymentHistory || []).map(p => {
+          if (p.id === paymentId) {
+            return { 
+              ...p, 
+              status: 'Validé',
+              startDate: startDateStr,
+              endDate: endDateStr
+            };
+          }
+          return p;
+        });
+
         return {
           ...c,
           status: 'Actif',
-          subscriptionExpires: '2026-09-30',
+          subscriptionStartDate: startDateStr,
+          subscriptionExpires: endDateStr,
           paymentHistory: updatedHistory
         };
       }
       return c;
-    }));
+    });
+
+    setClients(updatedClients);
+    broadcastStateUpdate('clients', updatedClients);
   };
 
   const handleConfirmPassage = (passageId, agentNote) => {
-    setPassages(passages.map(p => {
+    const updatedPassages = passages.map(p => {
       if (p.id === passageId) {
         return {
           ...p,
@@ -137,11 +187,14 @@ export default function App() {
         };
       }
       return p;
-    }));
+    });
+
+    setPassages(updatedPassages);
+    broadcastStateUpdate('passages', updatedPassages);
   };
 
   const handleRateAgent = (passageId, rating, feedback) => {
-    setPassages(passages.map(p => {
+    const updatedPassages = passages.map(p => {
       if (p.id === passageId) {
         return {
           ...p,
@@ -150,28 +203,35 @@ export default function App() {
         };
       }
       return p;
-    }));
+    });
+
+    setPassages(updatedPassages);
+    broadcastStateUpdate('passages', updatedPassages);
   };
 
   const handleSubmitComplaint = (complaintData) => {
     const newComplaint = {
       id: `rec-${Date.now()}`,
-      clientId: activeClient.id,
-      clientName: activeClient.name,
-      phone: activeClient.phone,
-      quartier: activeClient.quartier,
-      avenue: `${activeClient.avenue} ${activeClient.parcelleNo}`,
+      clientId: activeClient?.id || 'cli-1',
+      clientName: activeClient?.name || 'Client Eco Clean',
+      phone: activeClient?.phone || '',
+      quartier: activeClient?.quartier || '',
+      avenue: activeClient ? `${activeClient.avenue} ${activeClient.parcelleNo}` : '',
       agentAssigned: 'KAPUKU Alain',
       date: new Date().toISOString().split('T')[0],
       ...complaintData,
       status: 'En cours de traitement'
     };
 
-    setComplaints([newComplaint, ...complaints]);
+    const updatedComplaints = [newComplaint, ...complaints];
+    setComplaints(updatedComplaints);
+    broadcastStateUpdate('complaints', updatedComplaints);
   };
 
   const handleResolveComplaint = (complaintId) => {
-    setComplaints(complaints.map(c => c.id === complaintId ? { ...c, status: 'Résolu' } : c));
+    const updatedComplaints = complaints.map(c => c.id === complaintId ? { ...c, status: 'Résolu' } : c);
+    setComplaints(updatedComplaints);
+    broadcastStateUpdate('complaints', updatedComplaints);
   };
 
   return (
@@ -185,8 +245,8 @@ export default function App() {
         onOpenAuth={handleOpenAuth}
       />
 
-      {/* Main View Router */}
-      <main style={{ flex: 1 }}>
+      {/* Main View Router with Animated Page Transition */}
+      <main key={currentRole} className="page-transition-enter" style={{ flex: 1 }}>
         {currentRole === 'public' && (
           <LandingPage 
             onSelectRole={setCurrentRole} 
@@ -240,3 +300,4 @@ export default function App() {
     </div>
   );
 }
+
