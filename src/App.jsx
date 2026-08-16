@@ -23,7 +23,7 @@ export default function App() {
   const [clients, setClients] = useState(INITIAL_CLIENTS);
   const [agents, setAgents] = useState(INITIAL_AGENTS);
   const [admins, setAdmins] = useState([
-    { id: 'adm-1', name: 'Administrateur Principal', phone: '+243 00 00 00 000' }
+    { id: 'adm-1', name: 'Aubin Muzola', phone: '+243983850447', password: '12345678' }
   ]);
   const [passages, setPassages] = useState(INITIAL_PASSAGES);
   const [complaints, setComplaints] = useState(INITIAL_COMPLAINTS);
