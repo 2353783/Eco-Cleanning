@@ -28,9 +28,9 @@ export default function App() {
   const [passages, setPassages] = useState(INITIAL_PASSAGES);
   const [complaints, setComplaints] = useState(INITIAL_COMPLAINTS);
 
-  // Active client session (defaults to Kabamba Joseph for demo when switching)
-  const [activeClientId, setActiveClientId] = useState('cli-1');
-  const [activeAgentId, setActiveAgentId] = useState('agt-1');
+  // Active client session
+  const [activeClientId, setActiveClientId] = useState(null);
+  const [activeAgentId, setActiveAgentId] = useState(null);
 
   // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -63,35 +63,51 @@ export default function App() {
     setCurrentUser(null);
   };
 
-  const handleLoginSuccess = (role, formData) => {
+  const handleLoginSuccess = (role, formData, onError) => {
     if (formData.name && role === 'client') {
       // New Client registration
       const newClient = {
         id: `cli-${Date.now()}`,
         name: formData.name,
         phone: formData.phone,
-        commune: 'Matete',
-        quartier: formData.quartier || 'Batandu',
+        password: formData.password,
+        ville: formData.ville || 'Kinshasa',
+        commune: formData.commune || '',
+        quartier: formData.quartier || '',
         avenue: formData.avenue || 'Avenue Principale',
         parcelleNo: formData.parcelleNo || 'N° 1',
-        bouquetId: 'moyen',
-        bouquetName: 'Moyen Bouquet',
+        bouquetId: selectedBouquetId || 'moyen',
+        bouquetName: selectedBouquetId === 'petit' ? 'Petit Bouquet' : selectedBouquetId === 'grand' ? 'Grand Bouquet' : 'Moyen Bouquet',
         status: 'En attente',
+        subscriptionStartDate: null,
+        subscriptionExpires: null,
         paymentHistory: []
       };
       const updatedClients = [newClient, ...clients];
       setClients(updatedClients);
       broadcastStateUpdate('clients', updatedClients);
-
       setActiveClientId(newClient.id);
       setCurrentUser(newClient);
+      setCurrentRole('client');
     } else {
-      if (role === 'client') setCurrentUser(activeClient);
-      if (role === 'agent') setCurrentUser(activeAgent);
-      if (role === 'admin') setCurrentUser(admins[0]);
+      // Login: validate phone + password
+      if (role === 'client') {
+        const found = clients.find(c => c.phone === formData.phone && c.password === formData.password);
+        if (!found) { onError('Téléphone ou mot de passe incorrect.'); return; }
+        setActiveClientId(found.id);
+        setCurrentUser(found);
+      } else if (role === 'agent') {
+        const found = agents.find(a => a.phone === formData.phone && a.password === formData.password);
+        if (!found) { onError('Téléphone ou mot de passe incorrect.'); return; }
+        setActiveAgentId(found.id);
+        setCurrentUser(found);
+      } else if (role === 'admin') {
+        const found = admins.find(a => a.phone === formData.phone && a.password === formData.password);
+        if (!found) { onError('Téléphone ou mot de passe incorrect.'); return; }
+        setCurrentUser(found);
+      }
+      setCurrentRole(role);
     }
-
-    setCurrentRole(role);
   };
 
   const handleAddAgent = (newAgent) => {
@@ -100,8 +116,28 @@ export default function App() {
     broadcastStateUpdate('agents', updatedAgents);
   };
 
+  const handleDeleteAgent = (agentId) => {
+    const updatedAgents = agents.filter(a => a.id !== agentId);
+    setAgents(updatedAgents);
+    broadcastStateUpdate('agents', updatedAgents);
+  };
+
   const handleAddAdmin = (newAdmin) => {
     setAdmins([newAdmin, ...admins]);
+  };
+
+  const handleDeleteAdmin = (adminId) => {
+    if (admins.length <= 1) {
+      alert("Impossible de supprimer le dernier administrateur principal.");
+      return;
+    }
+    setAdmins(admins.filter(a => a.id !== adminId));
+  };
+
+  const handleDeleteClient = (clientId) => {
+    const updatedClients = clients.filter(c => c.id !== clientId);
+    setClients(updatedClients);
+    broadcastStateUpdate('clients', updatedClients);
   };
 
   // Handlers for state mutations across roles with real-time sync
@@ -278,12 +314,16 @@ export default function App() {
           <AdminDashboard 
             clients={clients}
             agents={agents}
+            admins={admins}
             passages={passages}
             complaints={complaints}
             onValidatePayment={handleValidatePayment}
             onResolveComplaint={handleResolveComplaint}
             onAddAgent={handleAddAgent}
             onAddAdmin={handleAddAdmin}
+            onDeleteClient={handleDeleteClient}
+            onDeleteAgent={handleDeleteAgent}
+            onDeleteAdmin={handleDeleteAdmin}
           />
         )}
       </main>

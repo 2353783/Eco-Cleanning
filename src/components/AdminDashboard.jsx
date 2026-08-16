@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import InteractiveMap from './InteractiveMap';
-import { CheckCircle2, Truck, Shield, Globe } from 'lucide-react';
+import { CheckCircle2, Truck, Shield, Globe, Trash2 } from 'lucide-react';
 import { VILLES_RDC } from '../data/mockData';
 
 export default function AdminDashboard({ 
-  clients, agents, passages, complaints,
-  onValidatePayment, onResolveComplaint, onAddAgent, onAddAdmin
+  clients, agents, admins, passages, complaints,
+  onValidatePayment, onResolveComplaint, onAddAgent, onAddAdmin,
+  onDeleteClient, onDeleteAgent, onDeleteAdmin
 }) {
   const [activeTab, setActiveTab] = useState('payments');
   const [selectedProofModal, setSelectedProofModal] = useState(null);
@@ -14,7 +15,7 @@ export default function AdminDashboard({
   // Agent creation
   const [newAgentName, setNewAgentName] = useState('');
   const [newAgentPhone, setNewAgentPhone] = useState('');
-  const [newAgentTricycle, setNewAgentTricycle] = useState('');
+  const [newAgentPassword, setNewAgentPassword] = useState('');
   const [selectedVilleAgent, setSelectedVilleAgent] = useState('Kinshasa');
   const [selectedCommunesAgent, setSelectedCommunesAgent] = useState([]);
   const [agentSuccess, setAgentSuccess] = useState(false);
@@ -22,6 +23,7 @@ export default function AdminDashboard({
   // Admin creation
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminPhone, setNewAdminPhone] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
   const [adminSuccess, setAdminSuccess] = useState(false);
 
   const pendingPayments = clients.flatMap(c =>
@@ -45,22 +47,27 @@ export default function AdminDashboard({
 
   const handleCreateAgent = (e) => {
     e.preventDefault();
+    // Auto-assign tricycle number based on total agents count (sequential, padded)
+    const nextTricycleNum = String(agents.length + 1).padStart(2, '0');
+    const autoTricycleNo = `Tricycle EcoClean #${nextTricycleNum}`;
     onAddAgent({
       id: `agt-${Date.now()}`,
       name: newAgentName,
       phone: newAgentPhone,
-      tricycleNo: newAgentTricycle || `Tricycle EcoClean #${Math.floor(Math.random()*99)+10}`,
+      password: newAgentPassword,
+      tricycleNo: autoTricycleNo,
       quartiersAssigned: selectedCommunesAgent.length > 0 ? selectedCommunesAgent : [selectedVilleAgent],
       ratingAvg: 5.0, ratingsCount: 0, status: 'Sur le terrain'
     });
-    setAgentSuccess(true); setNewAgentName(''); setNewAgentPhone(''); setNewAgentTricycle(''); setSelectedCommunesAgent([]);
+    setAgentSuccess(true);
+    setNewAgentName(''); setNewAgentPhone(''); setNewAgentPassword(''); setSelectedCommunesAgent([]);
     setTimeout(() => setAgentSuccess(false), 3000);
   };
 
   const handleCreateAdmin = (e) => {
     e.preventDefault();
-    onAddAdmin({ id: `adm-${Date.now()}`, name: newAdminName, phone: newAdminPhone });
-    setAdminSuccess(true); setNewAdminName(''); setNewAdminPhone('');
+    onAddAdmin({ id: `adm-${Date.now()}`, name: newAdminName, phone: newAdminPhone, password: newAdminPassword });
+    setAdminSuccess(true); setNewAdminName(''); setNewAdminPhone(''); setNewAdminPassword('');
     setTimeout(() => setAdminSuccess(false), 3000);
   };
 
@@ -173,18 +180,31 @@ export default function AdminDashboard({
             </h3>
             <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '18px' }}>Seul l'Admin peut enregistrer les agents de terrain et leur affecter des zones en RDC.</p>
             {agentSuccess && <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#DCFCE7', color: '#15803D', fontWeight: 700, marginBottom: '16px', fontSize: '0.85rem' }}>✅ Compte Agent créé avec succès !</div>}
+
+            {/* Auto tricycle preview */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', backgroundColor: '#E8F5E9', borderRadius: '10px', border: '1px solid #A5D6A7', marginBottom: '18px' }}>
+              <Truck size={18} color="#2E7D32" />
+              <div>
+                <div style={{ fontSize: '0.72rem', color: '#1B5E20', fontWeight: 700, textTransform: 'uppercase' }}>Tricycle auto-assigné</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1B5E20' }}>Tricycle EcoClean #{String(agents.length + 1).padStart(2, '0')}</div>
+              </div>
+              <span style={{ marginLeft: 'auto', fontSize: '0.72rem', backgroundColor: '#2E7D32', color: 'white', padding: '3px 8px', borderRadius: '20px', fontWeight: 700 }}>Attribué automatiquement</span>
+            </div>
+
             <form onSubmit={handleCreateAgent}>
               <div className="form-group">
                 <label className="form-label">Nom Complet de l'Agent</label>
                 <input type="text" className="form-input" placeholder="Ex: MUKENDI Marcel" value={newAgentName} onChange={(e) => setNewAgentName(e.target.value)} required />
               </div>
-              <div className="form-group">
-                <label className="form-label">Numéro de Téléphone</label>
-                <input type="tel" className="form-input" placeholder="+243 81 00 00 000" value={newAgentPhone} onChange={(e) => setNewAgentPhone(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Tricycle Assigné</label>
-                <input type="text" className="form-input" placeholder="Tricycle EcoClean #12" value={newAgentTricycle} onChange={(e) => setNewAgentTricycle(e.target.value)} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Numéro de Téléphone <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 400 }}>(identifiant)</span></label>
+                  <input type="tel" className="form-input" placeholder="+243 81 00 00 000" value={newAgentPhone} onChange={(e) => setNewAgentPhone(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Mot de Passe</label>
+                  <input type="text" className="form-input" placeholder="Mot de passe initial" value={newAgentPassword} onChange={(e) => setNewAgentPassword(e.target.value)} required />
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Ville d'Intervention en RDC</label>
@@ -211,26 +231,67 @@ export default function AdminDashboard({
             </form>
           </div>
 
-          {/* Admin form */}
-          <div className="eco-card" style={{ padding: '28px', borderRadius: '20px' }}>
-            <h3 style={{ fontSize: '1.2rem', color: '#1B5E20', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Shield size={22} color="#2E7D32" /> Créer un Compte Administrateur
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '18px' }}>Ajouter un administrateur secondaire pour gérer la ville.</p>
-            {adminSuccess && <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#DCFCE7', color: '#15803D', fontWeight: 700, marginBottom: '16px', fontSize: '0.85rem' }}>✅ Compte Admin créé avec succès !</div>}
-            <form onSubmit={handleCreateAdmin}>
-              <div className="form-group">
-                <label className="form-label">Nom Complet de l'Administrateur</label>
-                <input type="text" className="form-input" placeholder="Ex: KANKU Beatrice" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} required />
+          {/* Admin form + list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="eco-card" style={{ padding: '28px', borderRadius: '20px' }}>
+              <h3 style={{ fontSize: '1.2rem', color: '#1B5E20', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield size={22} color="#2E7D32" /> Créer un Compte Administrateur
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '18px' }}>Ajouter un administrateur secondaire. Le numéro de téléphone servira d'identifiant de connexion.</p>
+              {adminSuccess && <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: '#DCFCE7', color: '#15803D', fontWeight: 700, marginBottom: '16px', fontSize: '0.85rem' }}>✅ Compte Admin créé avec succès !</div>}
+              <form onSubmit={handleCreateAdmin}>
+                <div className="form-group">
+                  <label className="form-label">Nom Complet de l'Administrateur</label>
+                  <input type="text" className="form-input" placeholder="Ex: KANKU Beatrice" value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} required />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Numéro de Téléphone <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 400 }}>(identifiant)</span></label>
+                    <input type="tel" className="form-input" placeholder="+243 90 00 00 000" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Mot de Passe</label>
+                    <input type="text" className="form-input" placeholder="Mot de passe initial" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} required />
+                  </div>
+                </div>
+                <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px', padding: '12px' }}>
+                  Enregistrer l'Administrateur
+                </button>
+              </form>
+            </div>
+
+            {/* Admin list */}
+            <div className="eco-card" style={{ padding: '24px', borderRadius: '20px' }}>
+              <h4 style={{ fontSize: '1rem', color: '#1B5E20', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield size={18} color="#2E7D32" /> Administrateurs Enregistrés ({admins ? admins.length : 0})
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(admins || []).map((adm, idx) => (
+                  <div key={adm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', backgroundColor: '#F8FAF8', border: '1px solid #E2E8F0' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0F172A' }}>{adm.name}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748B' }}>📞 {adm.phone}</div>
+                      {adm.password && <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>🔑 Mdp : <span style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>{'•'.repeat(adm.password.length)}</span></div>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {idx === 0 && <span className="badge badge-active" style={{ fontSize: '0.7rem' }}>Principal</span>}
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Supprimer l'administrateur ${adm.name} ?`)) {
+                            onDeleteAdmin(adm.id);
+                          }
+                        }}
+                        disabled={idx === 0}
+                        title={idx === 0 ? 'Impossible de supprimer l\'admin principal' : 'Supprimer cet admin'}
+                        style={{ padding: '6px 10px', borderRadius: '8px', border: idx === 0 ? '1px solid #E2E8F0' : '1px solid #FCA5A5', backgroundColor: idx === 0 ? '#F1F5F9' : '#FEF2F2', color: idx === 0 ? '#94A3B8' : '#DC2626', cursor: idx === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', fontWeight: 600 }}
+                      >
+                        <Trash2 size={13} /> Supprimer
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="form-group">
-                <label className="form-label">Numéro de Téléphone</label>
-                <input type="tel" className="form-input" placeholder="+243 90 00 00 000" value={newAdminPhone} onChange={(e) => setNewAdminPhone(e.target.value)} required />
-              </div>
-              <button className="btn btn-primary" style={{ width: '100%', marginTop: '20px', padding: '12px' }}>
-                Enregistrer l'Administrateur
-              </button>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -259,9 +320,22 @@ export default function AdminDashboard({
                 <div style={{ fontSize: '0.85rem', color: '#15803D', fontWeight: 600, marginBottom: '14px' }}>
                   ⭐ Note moyenne: {agt.ratingAvg || 5.0} / 5 ({agt.ratingsCount || 0} avis)
                 </div>
-                <button className="btn btn-secondary" style={{ width: '100%', padding: '8px', fontSize: '0.82rem' }} onClick={() => alert(`Modifier la feuille de route de ${agt.name}`)}>
-                  Modifier Itinéraire & Ordre de Mission
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.82rem' }} onClick={() => alert(`Modifier la feuille de route de ${agt.name}`)}>
+                    Modifier Itinéraire
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Supprimer l'agent ${agt.name} ? Cette action est irréversible.`)) {
+                        onDeleteAgent(agt.id);
+                      }
+                    }}
+                    style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid #FCA5A5', backgroundColor: '#FEF2F2', color: '#DC2626', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 600 }}
+                    title="Supprimer cet agent"
+                  >
+                    <Trash2 size={14} /> Supprimer
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -320,6 +394,7 @@ export default function AdminDashboard({
                   <th style={{ padding: '14px', textAlign: 'left' }}>Statut</th>
                   <th style={{ padding: '14px', textAlign: 'left' }}>Date Début</th>
                   <th style={{ padding: '14px', textAlign: 'left' }}>Date Fin / Échéance</th>
+                  <th style={{ padding: '14px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -338,6 +413,19 @@ export default function AdminDashboard({
                     </td>
                     <td style={{ padding: '14px', color: '#15803D', fontWeight: 600 }}>{c.subscriptionStartDate || 'En attente'}</td>
                     <td style={{ padding: '14px', color: '#B45309', fontWeight: 600 }}>{c.subscriptionExpires || 'En attente'}</td>
+                    <td style={{ padding: '14px', textAlign: 'center' }}>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Supprimer le client ${c.name} ? Cette action supprimera définitivement son compte et tout son historique.`)) {
+                            onDeleteClient(c.id);
+                          }
+                        }}
+                        title="Supprimer ce client"
+                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #FCA5A5', backgroundColor: '#FEF2F2', color: '#DC2626', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 700 }}
+                      >
+                        <Trash2 size={13} /> Supprimer
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
