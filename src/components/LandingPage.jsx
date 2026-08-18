@@ -1,6 +1,5 @@
 import React from 'react';
 import { BOUQUETS, MOBILE_MONEY_NUMBERS, VILLES_RDC } from '../data/mockData';
-import InteractiveMap from './InteractiveMap';
 import { 
   CheckCircle2, 
   Smartphone, 
@@ -76,7 +75,7 @@ export default function LandingPage({ onSelectRole, onOpenAuth, passages }) {
             </h1>
 
             <p style={{ fontSize: '1.18rem', color: '#E2E8F0', lineHeight: 1.7, marginBottom: '36px', maxWidth: '680px' }}>
-              <strong>ECO CLEAN RDC</strong> est la plateforme numérique centrale dédiée à la gestion, la collecte régulière et l'évacuation des ordures ménagères à travers l'ensemble des villes et communes de la République Démocratique du Congo. Abonnez-vous en quelques secondes, suivez le passage des tricycles dans votre avenue et payez facilement via Mobile Money.
+              <strong>ECO CLEAN RDC</strong> est la plateforme numérique centrale dédiée à la gestion, la collecte régulière et l'évacuation des ordures ménagères à travers l'ensemble des villes et communes de la République Démocratique du Congo. Abonnez-vous maintenant, suivez le passage des tricycles dans votre avenue et payez facilement via Mobile Money.
             </p>
 
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '40px' }}>
@@ -385,12 +384,6 @@ export default function LandingPage({ onSelectRole, onOpenAuth, passages }) {
       </section>
 
 
-      {/* INTERACTIVE RDC MAP SECTION */}
-      <section id="zones" style={{ padding: '70px 24px', backgroundColor: '#F8FAF8', borderTop: '1px solid #E2E8F0' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <InteractiveMap passages={passages} role="public" />
-        </div>
-      </section>
 
 
       {/* HOW IT WORKS SECTION */}

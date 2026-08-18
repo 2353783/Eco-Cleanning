@@ -97,10 +97,95 @@ export const MOBILE_MONEY_NUMBERS = [
   }
 ];
 
-export const INITIAL_CLIENTS = [];
+export const INITIAL_ADMINS = [
+  {
+    id: 'adm-1',
+    name: 'Aubin Muzola',
+    phone: '+243983850447',
+    password: '12345678'
+  }
+];
 
-export const INITIAL_AGENTS = [];
+export const INITIAL_AGENTS = [
+  {
+    id: 'agt-1',
+    name: 'KAPUKU Alain',
+    phone: '+243820000001',
+    password: '12345678',
+    tricycleNo: 'Tricycle EcoClean #01',
+    quartiersAssigned: ['Matete', 'Limete', 'Lemba'],
+    ratingAvg: 4.9,
+    ratingsCount: 18,
+    status: 'Sur le terrain'
+  },
+  {
+    id: 'agt-2',
+    name: 'MBUYI Patrick',
+    phone: '+243820000002',
+    password: '12345678',
+    tricycleNo: 'Tricycle EcoClean #02',
+    quartiersAssigned: ['Gombe', 'Kintambo', 'Lingwala'],
+    ratingAvg: 4.8,
+    ratingsCount: 12,
+    status: 'Sur le terrain'
+  }
+];
 
-export const INITIAL_PASSAGES = [];
+export const INITIAL_CLIENTS = [
+  {
+    id: 'cli-1',
+    name: 'KABAMBA Joseph',
+    phone: '+243810000001',
+    password: '12345678',
+    ville: 'Kinshasa',
+    commune: 'Matete',
+    quartier: 'Batandu',
+    avenue: 'Avenue de la Paix',
+    parcelleNo: 'N° 14',
+    bouquetId: 'moyen',
+    bouquetName: 'Moyen Bouquet',
+    status: 'Actif',
+    subscriptionStartDate: '2026-08-01',
+    subscriptionExpires: '2026-09-01',
+    paymentHistory: [
+      {
+        id: 'pay-1',
+        date: '2026-08-01',
+        startDate: '2026-08-01',
+        endDate: '2026-09-01',
+        bouquetId: 'moyen',
+        bouquetName: 'Moyen Bouquet',
+        amount: 25000,
+        provider: 'AIRTEL MONEY',
+        serialNumber: 'TX-AIRTEL-889102',
+        proofUrl: '',
+        status: 'Validé'
+      }
+    ]
+  }
+];
+
+export const INITIAL_PASSAGES = [
+  {
+    id: 'pas-1',
+    clientId: 'cli-1',
+    clientName: 'KABAMBA Joseph',
+    ville: 'Kinshasa',
+    commune: 'Matete',
+    quartier: 'Batandu',
+    avenue: 'Avenue de la Paix',
+    parcelleNo: 'N° 14',
+    agentId: 'agt-1',
+    agentName: 'KAPUKU Alain',
+    tricycleNo: 'Tricycle EcoClean #01',
+    date: '2026-08-18',
+    timeSlot: '08:00 - 11:30',
+    status: 'Planifié',
+    completedAt: null,
+    agentNote: null,
+    clientRating: null,
+    clientFeedback: null
+  }
+];
 
 export const INITIAL_COMPLAINTS = [];

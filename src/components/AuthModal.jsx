@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import { VILLES_RDC } from '../data/mockData';
 import { X, User, Shield, Truck, Info, Eye, EyeOff, AlertCircle } from 'lucide-react';
@@ -9,6 +9,13 @@ export default function AuthModal({ isOpen, mode = 'login', selectedBouquetId = 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loginError, setLoginError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setAuthMode(mode);
+      setLoginError('');
+    }
+  }, [mode, isOpen]);
 
   const [formData, setFormData] = useState({
     name: '',

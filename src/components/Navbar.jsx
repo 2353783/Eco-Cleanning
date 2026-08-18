@@ -27,7 +27,6 @@ export default function Navbar({ currentUser, currentRole, onLogout, onOpenAuth 
 
   const navLinks = [
     { href: '#tarifs', icon: <CreditCard size={17} />, label: 'Tarifs & Bouquets' },
-    { href: '#quartiers', icon: <MapPin size={17} />, label: 'Nos Quartiers' },
     { href: '#fonctionnement', icon: <HelpCircle size={17} />, label: 'Comment ça marche' },
   ];
 
