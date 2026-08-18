@@ -1,5 +1,5 @@
 import React from 'react';
-import { BOUQUETS, MOBILE_MONEY_NUMBERS, VILLES_RDC } from '../data/mockData';
+import { BOUQUETS, MOBILE_MONEY_NUMBERS } from '../data/mockData';
 import { 
   CheckCircle2, 
   Smartphone, 
@@ -7,20 +7,12 @@ import {
   ShieldCheck, 
   Star, 
   ArrowRight, 
-  MapPin, 
-  Sparkles, 
-  Clock, 
-  PhoneCall, 
-  Trash2, 
   Users, 
   Award,
-  Globe,
-  Leaf,
-  Shield,
-  HelpCircle
+  Globe
 } from 'lucide-react';
 
-export default function LandingPage({ onSelectRole, onOpenAuth, passages }) {
+export default function LandingPage({ onOpenAuth }) {
 
   const scrollToSection = (sectionId) => {
     const el = document.getElementById(sectionId);

@@ -1,6 +1,3 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
-
 const STORAGE_PREFIX = 'eco_clean_';
 
 /**
@@ -31,35 +28,7 @@ export function setStoredData(key, value) {
   }
 }
 
-// Configuration Firebase interne pour Eco Clean RDC
-const firebaseConfig = {
-  apiKey: "AIzaSyEcoCleanRDC2026_DemoKey_Realtime",
-  authDomain: "eco-clean-rdc.firebaseapp.com",
-  projectId: "eco-clean-rdc",
-  storageBucket: "eco-clean-rdc.appspot.com",
-  messagingSenderId: "983850447112",
-  appId: "1:983850447112:web:ecocleanrdc2026"
-};
-
-let app = null;
-let db = null;
-let isFirebaseActive = false;
-
-try {
-  if (typeof window !== 'undefined') {
-    if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApps()[0];
-    }
-    db = getFirestore(app);
-    isFirebaseActive = true;
-  }
-} catch (error) {
-  isFirebaseActive = false;
-}
-
-// Canal de diffusion interne temps réel inter-onglets et inter-rôles (Client, Agent, Admin)
+// Canal de diffusion interne temps réel inter-onglets
 const syncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
   ? new BroadcastChannel('eco_clean_realtime_sync')
   : null;
@@ -92,7 +61,7 @@ if (typeof window !== 'undefined') {
             console.error(err);
           }
         });
-      } catch (err) {
+      } catch {
         // silent internal catch
       }
     }
@@ -100,42 +69,92 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Sauvegarde et diffuse en temps réel les modifications de données entre tous les profils et onglets
+ * Charge les données partagées du serveur multi-appareils
+ */
+export async function fetchServerData() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/data');
+    if (res.ok) {
+      const db = await res.json();
+      ['clients', 'agents', 'admins', 'passages', 'complaints'].forEach(sliceKey => {
+        if (db[sliceKey]) {
+          setStoredData(sliceKey, db[sliceKey]);
+          listeners.forEach(cb => cb({ sliceKey, data: db[sliceKey], timestamp: db.lastUpdated || Date.now() }));
+        }
+      });
+      return db;
+    }
+  } catch {
+    // Mode local si serveur non joignable
+  }
+  return null;
+}
+
+// Connexion temps réel SSE multi-appareils (Phones, Tablettes, PC)
+let eventSource = null;
+
+function setupRealtimeStream() {
+  if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+
+  try {
+    if (eventSource) {
+      eventSource.close();
+    }
+    eventSource = new EventSource('/api/events');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed.type === 'INIT' && parsed.payload) {
+          const db = parsed.payload;
+          ['clients', 'agents', 'admins', 'passages', 'complaints'].forEach(sliceKey => {
+            if (db[sliceKey]) {
+              setStoredData(sliceKey, db[sliceKey]);
+              listeners.forEach(cb => cb({ sliceKey, data: db[sliceKey], timestamp: db.lastUpdated }));
+            }
+          });
+        } else if (parsed.type === 'SYNC_STATE' && parsed.payload) {
+          const { sliceKey, data, timestamp } = parsed.payload;
+          if (sliceKey && data) {
+            setStoredData(sliceKey, data);
+            listeners.forEach(cb => cb({ sliceKey, data, timestamp }));
+          }
+        }
+      } catch (err) {
+        console.error('[SSE Error parsing]:', err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      // Reconnexion automatique gérée par EventSource
+    };
+  } catch (e) {
+    console.warn('[SSE Init error]:', e);
+  }
+}
+
+// Initialisation immédiate du flux et chargement
+if (typeof window !== 'undefined') {
+  fetchServerData();
+  setupRealtimeStream();
+
+  // Polling de sécurité toutes les 4 secondes pour synchroniser les téléphones en veille
+  setInterval(() => {
+    fetchServerData();
+  }, 4000);
+}
+
+/**
+ * Sauvegarde et diffuse en temps réel les modifications de données entre tous les appareils et profils
  */
 export function broadcastStateUpdate(sliceKey, data) {
-  // 1. Sauvegarde systématique et synchrone dans le LocalStorage
+  // 1. Sauvegarde locale immédiate
   setStoredData(sliceKey, data);
 
   const payload = { sliceKey, data, timestamp: Date.now() };
 
-  // 2. Diffusion inter-onglets & fenêtres via BroadcastChannel
-  if (syncChannel) {
-    try {
-      syncChannel.postMessage({ type: 'SYNC_STATE', payload });
-    } catch (e) {
-      // internal handle
-    }
-  }
-
-  // 3. Diffusion via storage event pour les navigateurs tiers
-  try {
-    localStorage.setItem(`${STORAGE_PREFIX}last_update`, JSON.stringify(payload));
-  } catch (e) {
-    // internal handle
-  }
-
-  // 4. Synchronisation Firebase Firestore en arrière-plan (si disponible)
-  if (db && isFirebaseActive) {
-    try {
-      const docRef = doc(db, "appState", sliceKey);
-      setDoc(docRef, { items: data, updatedAt: new Date().toISOString() }, { merge: true })
-        .catch(() => {});
-    } catch (e) {
-      // internal handle
-    }
-  }
-
-  // 5. Mise à jour immédiate des écouteurs de l'onglet actif
+  // 2. Diffusion locale immédiate aux écouteurs et onglets du même appareil
   listeners.forEach(cb => {
     try {
       cb(payload);
@@ -143,6 +162,27 @@ export function broadcastStateUpdate(sliceKey, data) {
       console.error(err);
     }
   });
+
+  if (syncChannel) {
+    try {
+      syncChannel.postMessage({ type: 'SYNC_STATE', payload });
+    } catch {}
+  }
+
+  try {
+    localStorage.setItem(`${STORAGE_PREFIX}last_update`, JSON.stringify(payload));
+  } catch {}
+
+  // 3. Envoi au serveur partagé pour mise à jour de db.json et diffusion à tous les autres téléphones/appareils
+  if (typeof window !== 'undefined') {
+    fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sliceKey, data })
+    }).catch(err => {
+      console.warn('[Sync to Server]:', err);
+    });
+  }
 }
 
 /**
@@ -150,36 +190,17 @@ export function broadcastStateUpdate(sliceKey, data) {
  */
 export function subscribeToRealtimeSync(callback) {
   listeners.add(callback);
-
-  let unsubscribes = [];
-  if (db && isFirebaseActive) {
-    ['clients', 'agents', 'admins', 'passages', 'complaints'].forEach(sliceKey => {
-      try {
-        const docRef = doc(db, "appState", sliceKey);
-        const unsub = onSnapshot(docRef, (snapshot) => {
-          if (snapshot.exists() && snapshot.data()?.items) {
-            callback({ sliceKey, data: snapshot.data().items, timestamp: Date.now() });
-          }
-        }, () => {});
-        unsubscribes.push(unsub);
-      } catch (e) {
-        // internal handle
-      }
-    });
-  }
-
   return () => {
     listeners.delete(callback);
-    unsubscribes.forEach(u => typeof u === 'function' && u());
   };
 }
 
 /**
- * Obtention du statut interne
+ * Statut de la synchronisation
  */
 export function getFirebaseStatus() {
   return {
     isConnected: true,
-    engine: isFirebaseActive ? 'Firebase Firestore (Internal)' : 'Realtime Sync Engine (Internal)'
+    engine: 'EcoClean Multi-Device Realtime Cloud Engine'
   };
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
-import { User, Shield, Truck, LogOut, UserPlus, LogIn, Menu, X, Home, CreditCard, MapPin, HelpCircle, ChevronRight } from 'lucide-react';
+import { User, Shield, Truck, LogOut, UserPlus, LogIn, Menu, X, CreditCard, HelpCircle, ChevronRight } from 'lucide-react';
 
 export default function Navbar({ currentUser, currentRole, onLogout, onOpenAuth }) {
   const [menuOpen, setMenuOpen] = useState(false);

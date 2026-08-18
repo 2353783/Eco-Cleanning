@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import InteractiveMap from './InteractiveMap';
-import { CheckCircle2, Truck, Shield, Globe, Trash2 } from 'lucide-react';
+import { CheckCircle2, Truck, Shield, Trash2 } from 'lucide-react';
 import { VILLES_RDC } from '../data/mockData';
 
 export default function AdminDashboard({ 
@@ -8,7 +8,20 @@ export default function AdminDashboard({
   onValidatePayment, onResolveComplaint, onAddAgent, onAddAdmin,
   onDeleteClient, onDeleteAgent, onDeleteAdmin
 }) {
-  const [activeTab, setActiveTab] = useState('payments');
+  const [activeTab, setActiveTabState] = useState(() => {
+    try {
+      return localStorage.getItem('eco_clean_admin_tab') || 'payments';
+    } catch {
+      return 'payments';
+    }
+  });
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    try {
+      localStorage.setItem('eco_clean_admin_tab', tab);
+    } catch {}
+  };
   const [selectedProofModal, setSelectedProofModal] = useState(null);
   const [selectedComplaintPhotoModal, setSelectedComplaintPhotoModal] = useState(null);
 

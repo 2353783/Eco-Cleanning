@@ -3,16 +3,26 @@ import InteractiveMap from './InteractiveMap';
 import { 
   Truck, 
   CheckCircle2, 
-  Clock, 
-  MapPin, 
-  Navigation, 
   CheckSquare,
   Globe
 } from 'lucide-react';
 import { VILLES_RDC } from '../data/mockData';
 
 export default function AgentDashboard({ agent, passages, onConfirmPassage }) {
-  const [selectedVilleFilter, setSelectedVilleFilter] = useState('Tous');
+  const [selectedVilleFilter, setSelectedVilleFilterState] = useState(() => {
+    try {
+      return localStorage.getItem('eco_clean_agent_filter') || 'Tous';
+    } catch {
+      return 'Tous';
+    }
+  });
+
+  const setSelectedVilleFilter = (f) => {
+    setSelectedVilleFilterState(f);
+    try {
+      localStorage.setItem('eco_clean_agent_filter', f);
+    } catch {}
+  };
   const [noteText, setNoteText] = useState({});
 
   const agentPassages = passages.filter(p =>

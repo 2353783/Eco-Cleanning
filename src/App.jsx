@@ -23,7 +23,7 @@ import {
 
 const normalizePhone = (p) => {
   if (!p) return '';
-  return String(p).replace(/[\s\-\(\)\.]/g, '').replace(/^(\+243|00243)/, '0');
+  return String(p).replace(/[\s().-]/g, '').replace(/^(\+243|00243)/, '0');
 };
 
 export default function App() {
@@ -85,6 +85,17 @@ export default function App() {
   const activeClient = clients.find(c => c.id === activeClientId) || currentUser || clients[0];
   const activeAgent = agents.find(a => a.id === activeAgentId) || currentUser || agents[0];
 
+  useEffect(() => {
+    if (currentRole) {
+      setStoredData('current_role', currentRole);
+    }
+  }, [currentRole]);
+
+  const handleSetRole = (role) => {
+    setCurrentRole(role);
+    setStoredData('current_role', role);
+  };
+
   const handleOpenAuth = (mode = 'login', bouquetId = null) => {
     setAuthModalMode(mode);
     setSelectedBouquetId(bouquetId);
@@ -92,8 +103,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    setCurrentRole('public');
-    setStoredData('current_role', 'public');
+    handleSetRole('public');
     setCurrentUser(null);
     setStoredData('current_user', null);
     setActiveClientId(null);
@@ -422,7 +432,7 @@ export default function App() {
       <main key={currentRole} className="page-transition-enter" style={{ flex: 1 }}>
         {currentRole === 'public' && (
           <LandingPage 
-            onSelectRole={setCurrentRole} 
+            onSelectRole={handleSetRole} 
             onOpenAuth={handleOpenAuth}
             passages={passages}
           />

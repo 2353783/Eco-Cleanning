@@ -5,20 +5,28 @@ import {
   MapPin, 
   CreditCard, 
   Upload, 
-  Star, 
-  AlertCircle, 
   CheckCircle2, 
   Clock, 
   Camera, 
   Send, 
-  Truck, 
-  PlusCircle,
-  FileText,
-  Globe
+  Truck
 } from 'lucide-react';
 
 export default function ClientDashboard({ client, onUpdateClient, passages, onAddPayment, onRateAgent, onSubmitComplaint }) {
-  const [activeTab, setActiveTab] = useState('overview'); // overview, payment, passages, reclamation, profile
+  const [activeTab, setActiveTabState] = useState(() => {
+    try {
+      return localStorage.getItem('eco_clean_client_tab') || 'overview';
+    } catch {
+      return 'overview';
+    }
+  });
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    try {
+      localStorage.setItem('eco_clean_client_tab', tab);
+    } catch {}
+  };
 
   // Profile Edit State
   const [profileData, setProfileData] = useState({

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { MapPin, Truck, CheckCircle2, Navigation, Globe } from 'lucide-react';
+import { Truck, Globe } from 'lucide-react';
 import { VILLES_RDC } from '../data/mockData';
 
-export default function InteractiveMap({ passages = [], role = 'public' }) {
+export default function InteractiveMap({ passages: _passages = [], role: _role = 'public' }) {
   const [selectedVille, setSelectedVille] = useState('Kinshasa');
 
   const villesMapData = [
