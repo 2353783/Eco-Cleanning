@@ -17,13 +17,19 @@ import {
 import { 
   broadcastStateUpdate, 
   subscribeToRealtimeSync,
+  fetchServerData,
   getStoredData,
   setStoredData
 } from './firebase';
 
 const normalizePhone = (p) => {
   if (!p) return '';
-  return String(p).replace(/[\s().-]/g, '').replace(/^(\+243|00243)/, '0');
+  let str = String(p).replace(/[\s().-]/g, '');
+  str = str.replace(/^(\+243|00243|\+242|00242)/, '');
+  if (str.startsWith('0')) {
+    str = str.substring(1);
+  }
+  return str;
 };
 
 export default function App() {
@@ -47,6 +53,17 @@ export default function App() {
 
   // Real-time synchronization across Client, Agent, Admin profiles and browser tabs
   useEffect(() => {
+    // 1. Charger immédiatement les données les plus fraîches du serveur dès l'ouverture de l'application
+    fetchServerData().then(db => {
+      if (db) {
+        if (Array.isArray(db.clients)) setClients(db.clients);
+        if (Array.isArray(db.agents)) setAgents(db.agents);
+        if (Array.isArray(db.admins)) setAdmins(db.admins);
+        if (Array.isArray(db.passages)) setPassages(db.passages);
+        if (Array.isArray(db.complaints)) setComplaints(db.complaints);
+      }
+    });
+
     const unsubscribe = subscribeToRealtimeSync(({ sliceKey, data }) => {
       if (!data) return;
       if (sliceKey === 'clients') {
@@ -113,9 +130,16 @@ export default function App() {
     setSelectedBouquetId(null);
   };
 
-  const handleLoginSuccess = (role, formData, onError) => {
+  const handleLoginSuccess = async (role, formData, onError) => {
     if (formData.name && role === 'client') {
-      // New Client registration
+      // 1. Récupérer d'abord les clients existants depuis le serveur pour éviter tout écrasement
+      let baseClients = clients;
+      const freshDb = await fetchServerData();
+      if (freshDb && Array.isArray(freshDb.clients)) {
+        baseClients = freshDb.clients;
+      }
+
+      // 2. Création du nouveau client
       const newClient = {
         id: `cli-${Date.now()}`,
         name: formData.name.trim(),
@@ -133,9 +157,10 @@ export default function App() {
         subscriptionExpires: null,
         paymentHistory: []
       };
-      const updatedClients = [newClient, ...clients];
+
+      const updatedClients = [newClient, ...baseClients.filter(c => c.id !== newClient.id)];
       setClients(updatedClients);
-      broadcastStateUpdate('clients', updatedClients);
+      await broadcastStateUpdate('clients', updatedClients);
       
       setActiveClientId(newClient.id);
       setStoredData('active_client_id', newClient.id);
@@ -144,39 +169,95 @@ export default function App() {
       setCurrentRole('client');
       setStoredData('current_role', 'client');
       
-      // Auto close auth modal
+      // Fermeture modale
       setIsAuthOpen(false);
     } else {
-      // Login: validate phone + password
+      // Login: validation téléphone + mot de passe
       const cleanInputPhone = normalizePhone(formData.phone);
       const rawInputPhone = formData.phone ? formData.phone.trim() : '';
 
+      let currentClients = clients;
+      let currentAgents = agents;
+      let currentAdmins = admins;
+
       if (role === 'client') {
-        const found = clients.find(c => 
+        let found = currentClients.find(c => 
           (normalizePhone(c.phone) === cleanInputPhone || c.phone?.trim() === rawInputPhone) && 
           c.password === formData.password
         );
-        if (!found) { onError('Numéro de téléphone ou mot de passe client incorrect.'); return; }
+
+        // Si le client n'est pas encore trouvé localement (ex: créé sur un autre téléphone), interroger immédiatement le serveur !
+        if (!found) {
+          const freshDb = await fetchServerData();
+          if (freshDb && Array.isArray(freshDb.clients)) {
+            currentClients = freshDb.clients;
+            setClients(freshDb.clients);
+            found = currentClients.find(c => 
+              (normalizePhone(c.phone) === cleanInputPhone || c.phone?.trim() === rawInputPhone) && 
+              c.password === formData.password
+            );
+          }
+        }
+
+        if (!found) {
+          onError('Numéro de téléphone ou mot de passe client incorrect.');
+          return;
+        }
+
         setActiveClientId(found.id);
         setStoredData('active_client_id', found.id);
         setCurrentUser(found);
         setStoredData('current_user', found);
       } else if (role === 'agent') {
-        const found = agents.find(a => 
+        let found = currentAgents.find(a => 
           (normalizePhone(a.phone) === cleanInputPhone || a.phone?.trim() === rawInputPhone) && 
           a.password === formData.password
         );
-        if (!found) { onError('Numéro de téléphone ou mot de passe agent incorrect.'); return; }
+
+        if (!found) {
+          const freshDb = await fetchServerData();
+          if (freshDb && Array.isArray(freshDb.agents)) {
+            currentAgents = freshDb.agents;
+            setAgents(freshDb.agents);
+            found = currentAgents.find(a => 
+              (normalizePhone(a.phone) === cleanInputPhone || a.phone?.trim() === rawInputPhone) && 
+              a.password === formData.password
+            );
+          }
+        }
+
+        if (!found) {
+          onError('Numéro de téléphone ou mot de passe agent incorrect.');
+          return;
+        }
+
         setActiveAgentId(found.id);
         setStoredData('active_agent_id', found.id);
         setCurrentUser(found);
         setStoredData('current_user', found);
       } else if (role === 'admin') {
-        const found = admins.find(a => 
+        let found = currentAdmins.find(a => 
           (normalizePhone(a.phone) === cleanInputPhone || a.phone?.trim() === rawInputPhone) && 
           a.password === formData.password
         );
-        if (!found) { onError('Numéro de téléphone ou mot de passe administrateur incorrect.'); return; }
+
+        if (!found) {
+          const freshDb = await fetchServerData();
+          if (freshDb && Array.isArray(freshDb.admins)) {
+            currentAdmins = freshDb.admins;
+            setAdmins(freshDb.admins);
+            found = currentAdmins.find(a => 
+              (normalizePhone(a.phone) === cleanInputPhone || a.phone?.trim() === rawInputPhone) && 
+              a.password === formData.password
+            );
+          }
+        }
+
+        if (!found) {
+          onError('Numéro de téléphone ou mot de passe administrateur incorrect.');
+          return;
+        }
+
         setCurrentUser(found);
         setStoredData('current_user', found);
       }
@@ -184,7 +265,7 @@ export default function App() {
       setCurrentRole(role);
       setStoredData('current_role', role);
 
-      // Auto close auth modal
+      // Fermeture modale
       setIsAuthOpen(false);
     }
   };

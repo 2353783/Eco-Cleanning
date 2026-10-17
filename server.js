@@ -9,7 +9,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5173;
-const dbFilePath = path.resolve(__dirname, 'src/data/db.json');
+const dbFilePath = path.resolve(__dirname, 'data/db.json');
+const legacyDbFilePath = path.resolve(__dirname, 'src/data/db.json');
 
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
@@ -19,6 +20,11 @@ function readDb() {
   try {
     if (fs.existsSync(dbFilePath)) {
       return JSON.parse(fs.readFileSync(dbFilePath, 'utf-8'));
+    }
+    if (fs.existsSync(legacyDbFilePath)) {
+      const data = JSON.parse(fs.readFileSync(legacyDbFilePath, 'utf-8'));
+      writeDb(data);
+      return data;
     }
   } catch (e) {
     console.error('Error reading db:', e);
@@ -41,7 +47,7 @@ const sseClients = new Set();
 app.get('/api/events', (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
+    'Cache-Control': 'no-cache, no-transform',
     'Connection': 'keep-alive',
     'Access-Control-Allow-Origin': '*'
   });
@@ -55,6 +61,7 @@ app.get('/api/events', (req, res) => {
 
 // Full DB Endpoint
 app.get('/api/data', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.json(readDb());
 });
 

@@ -9,11 +9,13 @@ export default function AuthModal({ isOpen, mode = 'login', selectedBouquetId = 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setAuthMode(mode);
       setLoginError('');
+      setIsSubmitting(false);
     }
   }, [mode, isOpen]);
 
@@ -33,7 +35,7 @@ export default function AuthModal({ isOpen, mode = 'login', selectedBouquetId = 
 
   const selectedVilleObj = VILLES_RDC.find(v => v.name === formData.ville) || VILLES_RDC[0];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
 
@@ -46,9 +48,19 @@ export default function AuthModal({ isOpen, mode = 'login', selectedBouquetId = 
         setLoginError('Le mot de passe doit contenir au moins 4 caractères.');
         return;
       }
-      onLoginSuccess('client', formData, setLoginError);
+      setIsSubmitting(true);
+      try {
+        await onLoginSuccess('client', formData, setLoginError);
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
-      onLoginSuccess(loginRole, formData, setLoginError);
+      setIsSubmitting(true);
+      try {
+        await onLoginSuccess(loginRole, formData, setLoginError);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -219,8 +231,16 @@ export default function AuthModal({ isOpen, mode = 'login', selectedBouquetId = 
             </div>
           )}
 
-          <button className="btn btn-primary" style={{ width: '100%', padding: '13px', fontSize: '0.95rem', marginTop: '10px' }}>
-            {authMode === 'login' ? `Accéder à l'Espace ${loginRole.charAt(0).toUpperCase() + loginRole.slice(1)}` : 'Créer mon Compte Client'}
+          <button 
+            type="submit"
+            className="btn btn-primary" 
+            disabled={isSubmitting}
+            style={{ width: '100%', padding: '13px', fontSize: '0.95rem', marginTop: '10px', opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+          >
+            {isSubmitting 
+              ? '⏳ Synchronisation en cours...' 
+              : (authMode === 'login' ? `Accéder à l'Espace ${loginRole.charAt(0).toUpperCase() + loginRole.slice(1)}` : 'Créer mon Compte Client')
+            }
           </button>
 
         </form>

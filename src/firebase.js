@@ -28,7 +28,7 @@ export function setStoredData(key, value) {
   }
 }
 
-// Canal de diffusion interne temps réel inter-onglets
+// Canal de diffusion interne temps réel inter-onglets du même navigateur
 const syncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
   ? new BroadcastChannel('eco_clean_realtime_sync')
   : null;
@@ -42,7 +42,7 @@ if (syncChannel) {
         try {
           callback(event.data.payload);
         } catch (err) {
-          console.error(err);
+          console.error('[SyncChannel cb error]:', err);
         }
       });
     }
@@ -58,7 +58,7 @@ if (typeof window !== 'undefined') {
           try {
             callback(payload);
           } catch (err) {
-            console.error(err);
+            console.error('[StorageEvent cb error]:', err);
           }
         });
       } catch {
@@ -69,38 +69,58 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Charge les données partagées du serveur multi-appareils
+ * Charge les données partagées du serveur multi-appareils (Phones, Tablettes, PC)
  */
 export async function fetchServerData() {
   if (typeof window === 'undefined') return null;
   try {
-    const res = await fetch('/api/data');
+    const res = await fetch(`/api/data?_=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+
     if (res.ok) {
-      const db = await res.json();
-      ['clients', 'agents', 'admins', 'passages', 'complaints'].forEach(sliceKey => {
-        if (db[sliceKey]) {
-          setStoredData(sliceKey, db[sliceKey]);
-          listeners.forEach(cb => cb({ sliceKey, data: db[sliceKey], timestamp: db.lastUpdated || Date.now() }));
-        }
-      });
-      return db;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const db = await res.json();
+        ['clients', 'agents', 'admins', 'passages', 'complaints'].forEach(sliceKey => {
+          if (Array.isArray(db[sliceKey])) {
+            setStoredData(sliceKey, db[sliceKey]);
+            listeners.forEach(cb => {
+              try {
+                cb({ sliceKey, data: db[sliceKey], timestamp: db.lastUpdated || Date.now() });
+              } catch (err) {
+                console.error(err);
+              }
+            });
+          }
+        });
+        return db;
+      }
     }
-  } catch {
-    // Mode local si serveur non joignable
+  } catch (err) {
+    // Mode local si serveur temporairement inaccessible
+    console.debug('[fetchServerData notice]:', err.message);
   }
   return null;
 }
 
-// Connexion temps réel SSE multi-appareils (Phones, Tablettes, PC)
+// Connexion temps réel SSE multi-appareils (Push direct instantané)
 let eventSource = null;
+let reconnectTimer = null;
 
-function setupRealtimeStream() {
+export function setupRealtimeStream() {
   if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
 
   try {
     if (eventSource) {
       eventSource.close();
+      eventSource = null;
     }
+
     eventSource = new EventSource('/api/events');
 
     eventSource.onmessage = (event) => {
@@ -109,16 +129,28 @@ function setupRealtimeStream() {
         if (parsed.type === 'INIT' && parsed.payload) {
           const db = parsed.payload;
           ['clients', 'agents', 'admins', 'passages', 'complaints'].forEach(sliceKey => {
-            if (db[sliceKey]) {
+            if (Array.isArray(db[sliceKey])) {
               setStoredData(sliceKey, db[sliceKey]);
-              listeners.forEach(cb => cb({ sliceKey, data: db[sliceKey], timestamp: db.lastUpdated }));
+              listeners.forEach(cb => {
+                try {
+                  cb({ sliceKey, data: db[sliceKey], timestamp: db.lastUpdated });
+                } catch (e) {
+                  console.error(e);
+                }
+              });
             }
           });
         } else if (parsed.type === 'SYNC_STATE' && parsed.payload) {
           const { sliceKey, data, timestamp } = parsed.payload;
-          if (sliceKey && data) {
+          if (sliceKey && Array.isArray(data)) {
             setStoredData(sliceKey, data);
-            listeners.forEach(cb => cb({ sliceKey, data, timestamp }));
+            listeners.forEach(cb => {
+              try {
+                cb({ sliceKey, data, timestamp });
+              } catch (e) {
+                console.error(e);
+              }
+            });
           }
         }
       } catch (err) {
@@ -127,28 +159,63 @@ function setupRealtimeStream() {
     };
 
     eventSource.onerror = () => {
-      // Reconnexion automatique gérée par EventSource
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      // Tentative de reconnexion après 3 secondes
+      if (!reconnectTimer) {
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          setupRealtimeStream();
+        }, 3000);
+      }
     };
   } catch (e) {
     console.warn('[SSE Init error]:', e);
   }
 }
 
-// Initialisation immédiate du flux et chargement
+// Gestion intelligente du cycle de vie des téléphones mobiles (veille / déverrouillage / retour onglet)
 if (typeof window !== 'undefined') {
+  // 1. Initialisation initiale
   fetchServerData();
   setupRealtimeStream();
 
-  // Polling de sécurité toutes les 4 secondes pour synchroniser les téléphones en veille
+  // 2. Synchronisation automatique au réveil du téléphone ou focus sur l'écran
+  window.addEventListener('focus', () => {
+    fetchServerData();
+    if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+      setupRealtimeStream();
+    }
+  });
+
+  window.addEventListener('online', () => {
+    fetchServerData();
+    setupRealtimeStream();
+  });
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        fetchServerData();
+        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+          setupRealtimeStream();
+        }
+      }
+    });
+  }
+
+  // 3. Polling de secours toutes les 3 secondes pour garantir la cohérence en arrière-plan
   setInterval(() => {
     fetchServerData();
-  }, 4000);
+  }, 3000);
 }
 
 /**
- * Sauvegarde et diffuse en temps réel les modifications de données entre tous les appareils et profils
+ * Sauvegarde et diffuse en temps réel les modifications de données entre tous les téléphones et appareils
  */
-export function broadcastStateUpdate(sliceKey, data) {
+export async function broadcastStateUpdate(sliceKey, data) {
   // 1. Sauvegarde locale immédiate
   setStoredData(sliceKey, data);
 
@@ -173,16 +240,26 @@ export function broadcastStateUpdate(sliceKey, data) {
     localStorage.setItem(`${STORAGE_PREFIX}last_update`, JSON.stringify(payload));
   } catch {}
 
-  // 3. Envoi au serveur partagé pour mise à jour de db.json et diffusion à tous les autres téléphones/appareils
+  // 3. Envoi au serveur partagé pour mise à jour de db.json et diffusion push SSE à tous les autres téléphones
   if (typeof window !== 'undefined') {
-    fetch('/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sliceKey, data })
-    }).catch(err => {
-      console.warn('[Sync to Server]:', err);
-    });
+    try {
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ sliceKey, data })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('[Sync to Server failed, data preserved in localStorage]:', err);
+    }
   }
+
+  return { success: true, localOnly: true };
 }
 
 /**
@@ -199,8 +276,10 @@ export function subscribeToRealtimeSync(callback) {
  * Statut de la synchronisation
  */
 export function getFirebaseStatus() {
+  const isSSEConnected = eventSource && eventSource.readyState === EventSource.OPEN;
   return {
     isConnected: true,
+    realtimeActive: Boolean(isSSEConnected),
     engine: 'EcoClean Multi-Device Realtime Cloud Engine'
   };
 }
