@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
-import { User, Shield, Truck, LogOut, UserPlus, LogIn, Menu, X, CreditCard, HelpCircle, ChevronRight } from 'lucide-react';
+import { User, Shield, Truck, LogOut, UserPlus, LogIn, Menu, X, CreditCard, HelpCircle, ChevronRight, Download } from 'lucide-react';
 
-export default function Navbar({ currentUser, currentRole, onLogout, onOpenAuth }) {
+export default function Navbar({ currentUser, currentRole, onLogout, onOpenAuth, canInstall, onInstall }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -50,6 +50,17 @@ export default function Navbar({ currentUser, currentRole, onLogout, onOpenAuth 
 
           {/* Desktop Actions */}
           <div className="navbar-actions-desktop">
+            {canInstall && (
+              <button
+                className="btn btn-outline"
+                style={{ padding: '8px 14px', fontSize: '0.85rem', borderColor: '#2E7D32', color: '#2E7D32', background: '#F0FDF4', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={onInstall}
+                title="Installer l'application sur votre appareil"
+              >
+                <Download size={15} /> Installer l'App
+              </button>
+            )}
+
             {currentRole === 'public' ? (
               <>
                 <button className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '0.88rem' }} onClick={() => onOpenAuth('login')}>
@@ -124,6 +135,30 @@ export default function Navbar({ currentUser, currentRole, onLogout, onOpenAuth 
 
         {/* Footer Actions */}
         <div className="mobile-sidebar__footer">
+          {canInstall && (
+            <button
+              className="btn"
+              style={{
+                width: '100%',
+                padding: '12px',
+                justifyContent: 'center',
+                fontSize: '0.90rem',
+                backgroundColor: '#E8F5E9',
+                color: '#1B5E20',
+                border: '1.5px solid #A5D6A7',
+                borderRadius: '10px',
+                fontWeight: 700,
+                marginBottom: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onClick={() => { onInstall?.(); closeMenu(); }}
+            >
+              <Download size={16} /> 📲 Installer l'App Eco Clean
+            </button>
+          )}
+
           {currentRole === 'public' ? (
             <>
               <button

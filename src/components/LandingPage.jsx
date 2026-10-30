@@ -9,10 +9,14 @@ import {
   ArrowRight, 
   Users, 
   Award,
-  Globe
+  Globe,
+  Download,
+  Laptop,
+  Zap,
+  WifiOff
 } from 'lucide-react';
 
-export default function LandingPage({ onOpenAuth }) {
+export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
 
   const scrollToSection = (sectionId) => {
     const el = document.getElementById(sectionId);
@@ -441,6 +445,79 @@ export default function LandingPage({ onOpenAuth }) {
         </div>
       </section>
 
+
+      {/* PWA INSTALLATION SECTION */}
+      <section style={{ backgroundColor: '#F0FDF4', padding: '60px 24px', borderTop: '1px solid #DCFCE7', borderBottom: '1px solid #DCFCE7' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: '#DCFCE7',
+            color: '#166534',
+            padding: '6px 16px',
+            borderRadius: '30px',
+            fontSize: '0.82rem',
+            fontWeight: 800,
+            marginBottom: '16px'
+          }}>
+            <Smartphone size={16} /> APPLICATION PWA UNIVERSELLE
+          </div>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#0F172A', marginBottom: '12px' }}>
+            Installez Eco Clean sur tous vos appareils
+          </h2>
+          <p style={{ color: '#475569', fontSize: '1rem', maxWidth: '640px', margin: '0 auto 36px', lineHeight: 1.6 }}>
+            Accédez en 1 clic à vos abonnements, plannings de passage et signalements directement depuis l'écran d'accueil de votre téléphone ou votre bureau, sans passer par les stores.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '36px', textAlign: 'left' }}>
+            <div style={{ backgroundColor: '#FFFFFF', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <Zap size={20} />
+              </div>
+              <h4 style={{ fontWeight: 700, fontSize: '0.98rem', color: '#0F172A', marginBottom: '4px' }}>Ultra Rapide</h4>
+              <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>Lancement instantané et interface fluide optimisée pour mobile et PC.</p>
+            </div>
+
+            <div style={{ backgroundColor: '#FFFFFF', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <WifiOff size={20} />
+              </div>
+              <h4 style={{ fontWeight: 700, fontSize: '0.98rem', color: '#0F172A', marginBottom: '4px' }}>Mode Hors-Ligne</h4>
+              <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>Consultez vos données et informations même sans réseau ou connexion faible.</p>
+            </div>
+
+            <div style={{ backgroundColor: '#FFFFFF', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <Laptop size={20} />
+              </div>
+              <h4 style={{ fontWeight: 700, fontSize: '0.98rem', color: '#0F172A', marginBottom: '4px' }}>Multi-Supports</h4>
+              <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0 }}>Compatible 100% avec Android, iPhone (iOS), iPad, Windows et Mac.</p>
+            </div>
+          </div>
+
+          {canInstall && (
+            <button
+              onClick={onInstall}
+              className="btn btn-primary"
+              style={{
+                padding: '14px 28px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                borderRadius: '12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 6px 20px rgba(46, 125, 50, 0.35)',
+                cursor: 'pointer'
+              }}
+            >
+              <Download size={18} />
+              Installer l'Application Eco Clean
+            </button>
+          )}
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer style={{ backgroundColor: '#0F172A', color: '#94A3B8', padding: '60px 24px 28px 24px', borderTop: '1px solid #1E293B' }}>

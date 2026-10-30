@@ -5,6 +5,7 @@ import ClientDashboard from './components/ClientDashboard';
 import AgentDashboard from './components/AgentDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AuthModal from './components/AuthModal';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 import { 
   INITIAL_CLIENTS, 
@@ -50,6 +51,9 @@ export default function App() {
   // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+
+  // PWA installation state & controller
+  const [pwaTrigger, setPwaTrigger] = useState(null);
 
   // Real-time synchronization across Client, Agent, Admin profiles and browser tabs
   useEffect(() => {
@@ -474,6 +478,8 @@ export default function App() {
         currentRole={currentRole} 
         onLogout={handleLogout}
         onOpenAuth={handleOpenAuth}
+        canInstall={pwaTrigger?.canInstall}
+        onInstall={pwaTrigger?.triggerInstall}
       />
 
       {/* Main View Router with Animated Page Transition */}
@@ -483,6 +489,8 @@ export default function App() {
             onSelectRole={handleSetRole} 
             onOpenAuth={handleOpenAuth}
             passages={passages}
+            canInstall={pwaTrigger?.canInstall}
+            onInstall={pwaTrigger?.triggerInstall}
           />
         )}
 
@@ -531,6 +539,9 @@ export default function App() {
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
+
+      {/* PWA Installation Prompt (Android, iOS, Windows, Mac, Linux) */}
+      <PWAInstallPrompt onTriggerReady={setPwaTrigger} />
 
     </div>
   );

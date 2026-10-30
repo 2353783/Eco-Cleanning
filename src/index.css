@@ -891,3 +891,15 @@ h1, h2, h3, h4, h5, h6 {
   .auth-logo-block { margin-bottom:18px; }
   .auth-title { font-size:1.1rem; }
 }
+
+@keyframes pwaSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 25px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
