@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import InteractiveMap from './InteractiveMap';
-import { CheckCircle2, Truck, Shield, Trash2 } from 'lucide-react';
+import { CheckCircle2, Truck, Shield, Trash2, Wifi } from 'lucide-react';
 import { VILLES_RDC } from '../data/mockData';
+import { getFirebaseStatus } from '../firebase';
 
 export default function AdminDashboard({ 
   clients, agents, admins, passages, complaints,
   onValidatePayment, onResolveComplaint, onAddAgent, onAddAdmin,
   onDeleteClient, onDeleteAgent, onDeleteAdmin
 }) {
+  const syncStatus = getFirebaseStatus();
   const [activeTab, setActiveTabState] = useState(() => {
     try {
       return localStorage.getItem('eco_clean_admin_tab') || 'payments';
@@ -95,6 +97,25 @@ export default function AdminDashboard({
             <span className="badge badge-active">Admin Principal</span>
           </h2>
           <p style={{ fontSize: '0.88rem', color: '#64748B', marginTop: '4px' }}>Gestion nationale du service d'assainissement à travers toute la République Démocratique du Congo.</p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#DCFCE7',
+              color: '#166534',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '0.78rem',
+              fontWeight: 700
+            }}>
+              <Wifi size={14} /> {syncStatus.statusLabel}
+            </span>
+            <span style={{ fontSize: '0.76rem', color: '#64748B' }}>
+              Moteur : {syncStatus.engine}
+            </span>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>

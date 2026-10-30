@@ -32,7 +32,30 @@
       ]
     }
   ],
-  "agents": [],
+  "agents": [
+    {
+      "id": "agt-1",
+      "name": "KAPUKU Alain",
+      "phone": "+243820000001",
+      "password": "12345678",
+      "tricycleNo": "Tricycle EcoClean #01",
+      "quartiersAssigned": ["Matete", "Limete", "Lemba"],
+      "ratingAvg": 4.9,
+      "ratingsCount": 18,
+      "status": "Sur le terrain"
+    },
+    {
+      "id": "agt-2",
+      "name": "MBUYI Patrick",
+      "phone": "+243820000002",
+      "password": "12345678",
+      "tricycleNo": "Tricycle EcoClean #02",
+      "quartiersAssigned": ["Gombe", "Kintambo", "Lingwala"],
+      "ratingAvg": 4.8,
+      "ratingsCount": 12,
+      "status": "Sur le terrain"
+    }
+  ],
   "admins": [
     {
       "id": "adm-1",

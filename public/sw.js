@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eco-clean-v1';
+const CACHE_NAME = 'eco-clean-v3';
 
 const STATIC_ASSETS = [
   '/',
@@ -12,25 +12,26 @@ const STATIC_ASSETS = [
   '/icons/apple-touch-icon.png'
 ];
 
-// Install event: Pre-cache essential app shell assets
+// Install: Pre-cache assets and immediately activate
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS).catch((err) => {
         console.warn('[ServiceWorker] Pre-cache warning:', err);
       });
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// Activate event: Clean up old cache versions
+// Activate: Purge ALL previous caches to guarantee instant updates
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((name) => {
           if (name !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', name);
+            console.log('[ServiceWorker] Purging outdated cache:', name);
             return caches.delete(name);
           }
         })
@@ -39,17 +40,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event: smart caching strategies
+// Fetch: Always Network-First so updates appear instantly
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Never cache non-GET requests or browser-extension schemes
+  // Skip non-GET requests and non-http(s) schemes
   if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
   }
 
-  // Never cache backend API calls, SSE real-time sync, or Vite HMR
+  // Never cache API calls, SSE real-time sync, or Vite HMR
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname.includes('/@vite/') ||
@@ -59,48 +60,38 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests (HTML pages): Network-first with cache fallback
-  if (request.mode === 'navigate') {
+  // On localhost/development: ALWAYS use Network directly to prevent stale dev caching
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request);
-          if (cached) return cached;
-          return caches.match('/index.html');
-        })
+      fetch(request).catch(() => caches.match(request))
     );
     return;
   }
 
-  // Static assets (scripts, styles, images, fonts): Stale-While-Revalidate
+  // Production: Network-first with cache fallback
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+        return null;
+      })
   );
 });
 
-// Listen for explicit skip-waiting requests
+// Explicit skip waiting message handler
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
-

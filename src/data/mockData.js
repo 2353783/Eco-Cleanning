@@ -33,10 +33,10 @@ export const BOUQUETS = [
     name: 'Petit Bouquet',
     price: 15000,
     priceFormatted: '15 000 FC / mois',
-    passages: '2 passages par semaine',
+    passages: '1 passage par semaine',
     description: 'Idéal pour les petits ménages résidant en RDC (1 à 4 personnes).',
     features: [
-      '2 enlèvements par semaine à domicile',
+      '1 enlèvement par semaine à domicile',
       'Sacs poubelles écologiques fournis',
       'Suivi SMS & Web du passage des tricycles',
       'Support client & réclamations 6j/7'
@@ -49,10 +49,10 @@ export const BOUQUETS = [
     name: 'Moyen Bouquet',
     price: 25000,
     priceFormatted: '25 000 FC / mois',
-    passages: '3 passages par semaine',
+    passages: '2 passages par semaine',
     description: 'La formule privilégiée par la majorité des familles en RDC.',
     features: [
-      '3 enlèvements par semaine',
+      '2 enlèvements par semaine',
       'Collecte prioritaire par tricycle dédié',
       'Notification en temps réel de passage',
       'Support réclamation prioritaire 24h/24',

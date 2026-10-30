@@ -7,14 +7,19 @@ export function registerServiceWorker() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('[PWA] Service Worker registered successfully with scope:', registration.scope);
+          // Vérifier immédiatement si une mise à jour existe
+          registration.update();
 
           registration.addEventListener('updatefound', () => {
             const installingWorker = registration.installing;
             if (installingWorker) {
               installingWorker.addEventListener('statechange', () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('[PWA] New version available! Reloading or updating cache.');
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    // Nouveau contenu disponible, activer immédiatement
+                    installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                    console.log('[PWA] Nouvelle version installée et activée.');
+                  }
                 }
               });
             }
@@ -23,7 +28,15 @@ export function registerServiceWorker() {
         .catch((error) => {
           console.warn('[PWA] Service Worker registration failed:', error);
         });
+
+      // Recharger automatiquement la vue dès que le nouveau Service Worker prend le contrôle
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     });
   }
 }
-

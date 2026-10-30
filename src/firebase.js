@@ -1,3 +1,6 @@
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+
 const STORAGE_PREFIX = 'eco_clean_';
 
 /**
@@ -28,7 +31,38 @@ export function setStoredData(key, value) {
   }
 }
 
-// Canal de diffusion interne temps réel inter-onglets du même navigateur
+// ---------------------------------------------------------
+// 1. DUAL-ENGINE: CONFIGURATION & INITIALISATION FIREBASE
+// ---------------------------------------------------------
+const firebaseConfig = {
+  apiKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) || "",
+  authDomain: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN) || "",
+  projectId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_PROJECT_ID) || "",
+  storageBucket: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET) || "",
+  messagingSenderId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID) || "",
+  appId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_APP_ID) || ""
+};
+
+let firebaseApp = null;
+let firestoreDb = null;
+let isFirebaseActive = false;
+
+// Initialiser Firebase si des identifiants valides sont fournis dans l'environnement
+if (typeof window !== 'undefined' && firebaseConfig.apiKey && firebaseConfig.projectId) {
+  try {
+    firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+    firestoreDb = getFirestore(firebaseApp);
+    isFirebaseActive = true;
+    console.log('[Firebase Cloud] Initialisé et connecté à Firestore.');
+  } catch (err) {
+    console.warn('[Firebase] Erreur lors de l\'initialisation, bascule sur le moteur local:', err.message);
+    isFirebaseActive = false;
+  }
+}
+
+// ---------------------------------------------------------
+// 2. CANAUX DE DIFFUSION LOCALE ET INTER-ONGLETS
+// ---------------------------------------------------------
 const syncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
   ? new BroadcastChannel('eco_clean_realtime_sync')
   : null;
@@ -62,15 +96,15 @@ if (typeof window !== 'undefined') {
           }
         });
       } catch {
-        // silent internal catch
+        // silent
       }
     }
   });
 }
 
-/**
- * Charge les données partagées du serveur multi-appareils (Phones, Tablettes, PC)
- */
+// ---------------------------------------------------------
+// 3. CHARGEMENT INITIAL DES DONNÉES SERVEUR / CLOUD
+// ---------------------------------------------------------
 export async function fetchServerData() {
   if (typeof window === 'undefined') return null;
   try {
@@ -102,18 +136,52 @@ export async function fetchServerData() {
       }
     }
   } catch (err) {
-    // Mode local si serveur temporairement inaccessible
     console.debug('[fetchServerData notice]:', err.message);
   }
   return null;
 }
 
-// Connexion temps réel SSE multi-appareils (Push direct instantané)
+// ---------------------------------------------------------
+// 4. CONNEXION TEMPS RÉEL MULTI-APPAREILS (SSE & FIRESTORE)
+// ---------------------------------------------------------
 let eventSource = null;
 let reconnectTimer = null;
 
 export function setupRealtimeStream() {
-  if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+  if (typeof window === 'undefined') return;
+
+  // Si Firebase Firestore est actif, souscrire aux documents en direct
+  if (isFirebaseActive && firestoreDb) {
+    const collections = ['clients', 'agents', 'admins', 'passages', 'complaints'];
+    collections.forEach(sliceKey => {
+      try {
+        const docRef = doc(firestoreDb, "appState", sliceKey);
+        onSnapshot(docRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const remoteData = snapshot.data();
+            if (remoteData && Array.isArray(remoteData.data)) {
+              setStoredData(sliceKey, remoteData.data);
+              listeners.forEach(cb => {
+                try {
+                  cb({ sliceKey, data: remoteData.data, timestamp: remoteData.timestamp || Date.now() });
+                } catch (e) {
+                  console.error(e);
+                }
+              });
+            }
+          }
+        }, (err) => {
+          console.warn(`[Firebase Snapshot warning on ${sliceKey}]:`, err.message);
+        });
+      } catch (err) {
+        console.warn(`[Firebase attach error on ${sliceKey}]:`, err);
+      }
+    });
+    return;
+  }
+
+  // Sinon, utiliser le moteur temps réel natif Eco Clean via Server-Sent Events (SSE)
+  if (typeof EventSource === 'undefined') return;
 
   try {
     if (eventSource) {
@@ -163,7 +231,6 @@ export function setupRealtimeStream() {
         eventSource.close();
         eventSource = null;
       }
-      // Tentative de reconnexion après 3 secondes
       if (!reconnectTimer) {
         reconnectTimer = setTimeout(() => {
           reconnectTimer = null;
@@ -176,13 +243,11 @@ export function setupRealtimeStream() {
   }
 }
 
-// Gestion intelligente du cycle de vie des téléphones mobiles (veille / déverrouillage / retour onglet)
+// Gestion intelligente du cycle de vie des téléphones mobiles (veille / réveil / reprise)
 if (typeof window !== 'undefined') {
-  // 1. Initialisation initiale
   fetchServerData();
   setupRealtimeStream();
 
-  // 2. Synchronisation automatique au réveil du téléphone ou focus sur l'écran
   window.addEventListener('focus', () => {
     fetchServerData();
     if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
@@ -206,22 +271,22 @@ if (typeof window !== 'undefined') {
     });
   }
 
-  // 3. Polling de secours toutes les 3 secondes pour garantir la cohérence en arrière-plan
+  // Polling doux de secours
   setInterval(() => {
     fetchServerData();
-  }, 3000);
+  }, 4000);
 }
 
-/**
- * Sauvegarde et diffuse en temps réel les modifications de données entre tous les téléphones et appareils
- */
+// ---------------------------------------------------------
+// 5. DIFFUSION ET SAUVEGARDE DES MODIFICATIONS
+// ---------------------------------------------------------
 export async function broadcastStateUpdate(sliceKey, data) {
-  // 1. Sauvegarde locale immédiate
+  // 1. Sauvegarde locale synchrone immédiate
   setStoredData(sliceKey, data);
 
   const payload = { sliceKey, data, timestamp: Date.now() };
 
-  // 2. Diffusion locale immédiate aux écouteurs et onglets du même appareil
+  // 2. Notification locale instantanée
   listeners.forEach(cb => {
     try {
       cb(payload);
@@ -240,7 +305,19 @@ export async function broadcastStateUpdate(sliceKey, data) {
     localStorage.setItem(`${STORAGE_PREFIX}last_update`, JSON.stringify(payload));
   } catch {}
 
-  // 3. Envoi au serveur partagé pour mise à jour de db.json et diffusion push SSE à tous les autres téléphones
+  // 3. Diffusion Firebase Firestore si actif
+  if (isFirebaseActive && firestoreDb) {
+    try {
+      const docRef = doc(firestoreDb, "appState", sliceKey);
+      setDoc(docRef, { data, timestamp: payload.timestamp }, { merge: true }).catch(err => {
+        console.warn('[Firebase setDoc warning]:', err.message);
+      });
+    } catch (err) {
+      console.warn('[Firebase setDoc sync error]:', err);
+    }
+  }
+
+  // 4. Envoi au serveur partagé multi-appareils (Express / Vite)
   if (typeof window !== 'undefined') {
     try {
       const res = await fetch('/api/sync', {
@@ -254,8 +331,8 @@ export async function broadcastStateUpdate(sliceKey, data) {
       if (res.ok) {
         return await res.json();
       }
-    } catch (err) {
-      console.warn('[Sync to Server failed, data preserved in localStorage]:', err);
+    } catch {
+      // Données préservées en LocalStorage
     }
   }
 
@@ -273,13 +350,22 @@ export function subscribeToRealtimeSync(callback) {
 }
 
 /**
- * Statut de la synchronisation
+ * Statut complet de la synchronisation et de Firebase
  */
 export function getFirebaseStatus() {
   const isSSEConnected = eventSource && eventSource.readyState === EventSource.OPEN;
   return {
     isConnected: true,
-    realtimeActive: Boolean(isSSEConnected),
-    engine: 'EcoClean Multi-Device Realtime Cloud Engine'
+    realtimeActive: Boolean(isSSEConnected || isFirebaseActive),
+    isFirebaseConfigured: Boolean(isFirebaseActive),
+    engine: isFirebaseActive 
+      ? 'Google Firebase Firestore (Cloud Direct)' 
+      : 'Moteur Multi-Appareils Eco Clean (SSE + REST + LocalStorage)',
+    statusLabel: isFirebaseActive 
+      ? '🟢 Connecté à Firebase Firestore' 
+      : '🟢 Synchronisation Temps Réel Active (Moteur Multi-Écrans Eco Clean)',
+    description: isFirebaseActive
+      ? 'Les données sont synchronisées directement avec la base de données Google Cloud Firestore.'
+      : 'Synchronisation instantanée multi-téléphones active via le serveur Eco Clean & SSE. Pour relier un compte Firebase externe, renseignez vos clés VITE_FIREBASE_* dans le fichier .env.'
   };
 }

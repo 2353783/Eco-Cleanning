@@ -8,7 +8,7 @@ import {
   Star, 
   ArrowRight, 
   Users, 
-  Award,
+  Award, 
   Globe,
   Download,
   Laptop,
@@ -168,7 +168,6 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
         </div>
       </section>
 
-
       {/* MOBILE MONEY NUMBERS BANNER */}
       <section style={{ padding: '48px 24px', backgroundColor: '#F8FAF8', borderBottom: '1px solid #E2E8F0' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -224,7 +223,6 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
         </div>
       </section>
 
-
       {/* EXPLANATORY SECTION WITH SECONDARY BACKGROUND IMAGE */}
       <section style={{
         position: 'relative',
@@ -250,33 +248,33 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
             
-            <div className="eco-card" style={{ padding: '32px', borderRadius: '20px', backgroundColor: '#FFFFFF' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '16px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <ShieldCheck size={32} />
+            <div className="eco-card" style={{ padding: '32px', borderRadius: '20px' }}>
+              <div style={{ width: '54px', height: '54px', borderRadius: '16px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <ShieldCheck size={28} />
               </div>
-              <h3 style={{ fontSize: '1.3rem', color: '#1B5E20', marginBottom: '12px' }}>1. Prévention des Maladies Hydriques</h3>
-              <p style={{ color: '#64748B', fontSize: '0.95rem', lineHeight: 1.6 }}>
-                En assurant une évacuation régulière des poubelles ménagères à la porte de votre domicile, nous luttons contre la prolifération des moustiques, des rongeurs et des germes infectieux.
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '12px', color: '#0F172A', fontWeight: 700 }}>Préservation de la Santé Familiale</h3>
+              <p style={{ color: '#64748B', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                Élimination systématique des gîtes larvaires de moustiques (paludisme) et des foyers bactériens (typhoïde, choléra) grâce à une évacuation rapide et hermétique.
               </p>
             </div>
 
-            <div className="eco-card" style={{ padding: '32px', borderRadius: '20px', backgroundColor: '#FFFFFF' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '16px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <Truck size={32} />
+            <div className="eco-card" style={{ padding: '32px', borderRadius: '20px' }}>
+              <div style={{ width: '54px', height: '54px', borderRadius: '16px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Truck size={28} />
               </div>
-              <h3 style={{ fontSize: '1.3rem', color: '#1B5E20', marginBottom: '12px' }}>2. Flotte de Tricycles & Logistique</h3>
-              <p style={{ color: '#64748B', fontSize: '0.95rem', lineHeight: 1.6 }}>
-                Nos tricycles écologiques et nos équipes sur le terrain accèdent facilement aux avenues les plus étroites de nos villes pour un ramassage ponctuel et sans tracas.
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '12px', color: '#0F172A', fontWeight: 700 }}>Flotte de Tricycles Dédiée</h3>
+              <p style={{ color: '#64748B', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                Nos tricycles motorisés accèdent facilement aux ruelles étroites et avenues non goudronnées des communes de Kinshasa et des provinces.
               </p>
             </div>
 
-            <div className="eco-card" style={{ padding: '32px', borderRadius: '20px', backgroundColor: '#FFFFFF' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '16px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <Award size={32} />
+            <div className="eco-card" style={{ padding: '32px', borderRadius: '20px' }}>
+              <div style={{ width: '54px', height: '54px', borderRadius: '16px', backgroundColor: '#E8F5E9', color: '#2E7D32', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Award size={28} />
               </div>
-              <h3 style={{ fontSize: '1.3rem', color: '#1B5E20', marginBottom: '12px' }}>3. Contrôle Qualité & Preuves Photos</h3>
-              <p style={{ color: '#64748B', fontSize: '0.95rem', lineHeight: 1.6 }}>
-                Chaque abonné peut évaluer l'agent de son secteur ou soumettre une photo d'état des lieux en cas de réclamation pour une re-intervention immédiate ordonnée par l'Admin.
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '12px', color: '#0F172A', fontWeight: 700 }}>Traçabilité & Décharges Contrôlées</h3>
+              <p style={{ color: '#64748B', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                Zéro dépôt sauvage. Toutes les ordures ramassées sont transportées vers les centres d'enfouissement et décharges officielles agréées par les autorités.
               </p>
             </div>
 
@@ -285,37 +283,37 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
         </div>
       </section>
 
-
       {/* BOUQUETS & PRICING SECTION WITH WORKING BUTTONS */}
       <section id="tarifs" style={{ padding: '90px 24px', backgroundColor: '#FFFFFF' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           
-          <div style={{ textAlign: 'center', maxWidth: '750px', margin: '0 auto 60px auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <span style={{ color: '#2E7D32', fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
-              FORMULES D'ABONNEMENT ACCESSIBLES EN RDC
+              TARIFS MENSUELS ACCESSIBLES
             </span>
-            <h2 style={{ fontSize: '2.4rem', color: '#0F172A', marginTop: '10px', marginBottom: '16px', fontWeight: 800 }}>
+            <h2 style={{ fontSize: '2.4rem', color: '#0F172A', marginTop: '8px', marginBottom: '14px', fontWeight: 800 }}>
               Choisissez le Bouquet Adapté à votre Résidence
             </h2>
-            <p style={{ color: '#64748B', fontSize: '1.05rem' }}>
+            <p style={{ color: '#64748B', fontSize: '1.05rem', maxWidth: '650px', margin: '0 auto' }}>
               Des tarifs clairs et transparents en Francs Congolais (FC) garantissant la propreté continue de votre parcelle.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
             {BOUQUETS.map(b => (
               <div 
                 key={b.id} 
                 className="eco-card" 
                 style={{ 
                   padding: '36px', 
-                  borderRadius: '24px',
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
+                  borderRadius: '24px', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
                   justifyContent: 'space-between',
-                  border: b.recommended ? '2.5px solid #2E7D32' : '1px solid #E2E8F0',
-                  boxShadow: b.recommended ? '0 20px 40px -6px rgba(46, 125, 50, 0.2)' : 'var(--shadow-md)'
+                  border: b.recommended ? '2px solid #2E7D32' : '1px solid #E2E8F0',
+                  boxShadow: b.recommended ? '0 20px 40px -10px rgba(46, 125, 50, 0.22)' : 'var(--shadow-md)',
+                  position: 'relative',
+                  backgroundColor: b.recommended ? '#FAFCFA' : '#FFFFFF'
                 }}
               >
                 {b.recommended && (
@@ -345,7 +343,20 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
                     <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0F172A' }}>
                       {b.price.toLocaleString()} <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#64748B' }}>FC / mois</span>
                     </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2E7D32', marginTop: '6px' }}>
+                    {/* Badge bien visible du nombre de passages par semaine */}
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      backgroundColor: '#E8F5E9',
+                      color: '#1B5E20',
+                      padding: '6px 14px',
+                      borderRadius: '10px',
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
+                      marginTop: '10px',
+                      border: '1px solid #C8E6C9'
+                    }}>
                       📅 {b.passages}
                     </div>
                   </div>
@@ -358,7 +369,7 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
                       {b.features.map((feat, i) => (
                         <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.92rem', color: '#334155' }}>
                           <CheckCircle2 size={18} color={b.color} style={{ flexShrink: 0 }} />
-                          <span>{feat}</span>
+                          <span style={{ fontWeight: i === 0 ? 700 : 500 }}>{feat}</span>
                         </li>
                       ))}
                     </ul>
@@ -378,9 +389,6 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
 
         </div>
       </section>
-
-
-
 
       {/* HOW IT WORKS SECTION */}
       <section id="fonctionnement" style={{ padding: '90px 24px', backgroundColor: '#FFFFFF' }}>
@@ -444,7 +452,6 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
 
         </div>
       </section>
-
 
       {/* PWA INSTALLATION SECTION */}
       <section style={{ backgroundColor: '#F0FDF4', padding: '60px 24px', borderTop: '1px solid #DCFCE7', borderBottom: '1px solid #DCFCE7' }}>
@@ -550,6 +557,7 @@ export default function LandingPage({ onOpenAuth, canInstall, onInstall }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem' }}>
               <button onClick={() => onOpenAuth('login')} style={{ background: 'none', border: 'none', color: '#A5D6A7', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}>Se Connecter à mon Espace</button>
               <button onClick={() => onOpenAuth('register')} style={{ background: 'none', border: 'none', color: '#A5D6A7', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}>Créer un Compte Client Gratuit</button>
+              <button onClick={() => scrollToSection('tarifs')} style={{ background: 'none', border: 'none', color: '#A5D6A7', textAlign: 'left', cursor: 'pointer', fontWeight: 600 }}>Bouquets & Tarifs</button>
             </div>
           </div>
 
